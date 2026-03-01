@@ -89,6 +89,26 @@ else
   echo "[OK] $CONFIG_ENV_FILE already exists — gateway token synced"
 fi
 
+# --- Create CLI config directory ---
+# The CLI container uses a separate minimal config to avoid bind/networking conflicts
+CLI_CONFIG_DIR="./data/config-cli"
+mkdir -p "$CLI_CONFIG_DIR"
+if [ ! -f "$CLI_CONFIG_DIR/openclaw.json" ]; then
+  cat > "$CLI_CONFIG_DIR/openclaw.json" << 'CLIEOF'
+{
+  "gateway": {
+    "port": 18789,
+    "mode": "local"
+  }
+}
+CLIEOF
+  chown 1000:1000 "$CLI_CONFIG_DIR/openclaw.json" 2>/dev/null || true
+  echo "[OK] Created CLI config at $CLI_CONFIG_DIR/openclaw.json"
+else
+  echo "[OK] CLI config already exists"
+fi
+chown -R 1000:1000 "$CLI_CONFIG_DIR" 2>/dev/null || true
+
 # --- Build custom image ---
 echo ""
 echo "Building custom image..."
@@ -129,6 +149,9 @@ gw = cfg.setdefault('gateway', {})
 
 # Bind to LAN so Docker port-forwarding works (loopback blocks it)
 gw['bind'] = 'lan'
+
+# Mode must be 'local' — gateway refuses to start without it
+gw['mode'] = 'local'
 
 # Use env var reference instead of plaintext token
 # The actual value is stored in data/config/.env and resolved at startup
@@ -194,11 +217,14 @@ docker compose up -d openclaw-gateway
 # --- Run security checks ---
 echo ""
 echo "Running security checks..."
-docker compose run --rm openclaw-cli doctor --repair 2>/dev/null \
+echo "Waiting for gateway to start..."
+sleep 10
+
+docker compose exec openclaw-gateway node dist/index.js doctor --repair 2>/dev/null \
   && echo "[OK] Doctor check passed" \
   || echo "[!]  Doctor check encountered issues — review the output above"
 
-docker compose run --rm openclaw-cli security audit --deep 2>/dev/null \
+docker compose exec openclaw-gateway node dist/index.js security audit --deep 2>/dev/null \
   && echo "[OK] Security audit passed" \
   || echo "[!]  Security audit found issues — review the output above"
 
@@ -216,15 +242,18 @@ echo "   docker compose logs -f openclaw-gateway    # View logs"
 echo "   docker compose down                        # Stop"
 echo "   docker compose up -d                       # Start"
 echo ""
+echo " Run CLI commands (gateway must be running):"
+echo "   docker compose exec openclaw-gateway node dist/index.js <command>"
+echo ""
 echo " Add channels:"
-echo "   docker compose run --rm openclaw-cli plugins enable whatsapp                     # Enable WhatsApp plugin"
-echo "   docker compose run --rm openclaw-cli channels login --channel whatsapp           # WhatsApp (scan QR)"
-echo "   docker compose run --rm openclaw-cli channels add --channel telegram --token T   # Telegram"
-echo "   docker compose run --rm openclaw-cli channels add --channel discord --token T    # Discord"
+echo "   docker compose exec openclaw-gateway node dist/index.js plugins enable whatsapp                     # Enable WhatsApp plugin"
+echo "   docker compose exec openclaw-gateway node dist/index.js channels login --channel whatsapp           # WhatsApp (scan QR)"
+echo "   docker compose exec openclaw-gateway node dist/index.js channels add --channel telegram --token T   # Telegram"
+echo "   docker compose exec openclaw-gateway node dist/index.js channels add --channel discord --token T    # Discord"
 echo ""
 echo " Security:"
-echo "   docker compose run --rm openclaw-cli doctor --repair          # Check & fix config issues"
-echo "   docker compose run --rm openclaw-cli security audit --deep    # Deep security audit"
+echo "   docker compose exec openclaw-gateway node dist/index.js doctor --repair          # Check & fix config issues"
+echo "   docker compose exec openclaw-gateway node dist/index.js security audit --deep    # Deep security audit"
 echo ""
 echo " Token rotation (recommended periodically):"
 echo "   1. Generate a new token:  openssl rand -hex 32"

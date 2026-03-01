@@ -14,8 +14,8 @@ services:
       - ${OPENCLAW_WORKSPACE_DIR:-./data/workspace}:/home/node/.openclaw/workspace
     shm_size: '2gb'
     ports:
-      - "127.0.0.1:18789:18789"   # Gateway API
-      - "127.0.0.1:18790:18790"   # Dashboard UI
+      - "18789:18789"   # Gateway API
+      - "18790:18790"   # Dashboard UI
     init: true
     restart: unless-stopped
     read_only: true
@@ -42,8 +42,6 @@ services:
         "node",
         "dist/index.js",
         "gateway",
-        "--bind",
-        "lan",
         "--port",
         "18789",
       ]
@@ -56,11 +54,10 @@ services:
       HOME: /home/node
       TERM: xterm-256color
       OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
-      OPENCLAW_GATEWAY_URL: ws://openclaw-gateway:18789
       BROWSER: echo
       CHROME_BIN: /usr/local/bin/chromium-docker
     volumes:
-      - ${OPENCLAW_CONFIG_DIR:-./data/config}:/home/node/.openclaw
+      - ./data/config-cli:/home/node/.openclaw
       - ${OPENCLAW_WORKSPACE_DIR:-./data/workspace}:/home/node/.openclaw/workspace
     stdin_open: true
     tty: true
@@ -69,7 +66,7 @@ services:
       - ALL
     security_opt:
       - no-new-privileges:true
-    read_only: true
+    read_only: false
     tmpfs:
       - /tmp:size=256m
     mem_limit: 2g
@@ -78,8 +75,7 @@ services:
     entrypoint: ["node", "dist/index.js"]
     profiles:
       - cli
-    networks:
-      - openclaw-net
+    network_mode: "service:openclaw-gateway"
 
 networks:
   openclaw-net:

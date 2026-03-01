@@ -219,13 +219,13 @@ You can connect one or more messaging platforms after setup.
 1. Enable the WhatsApp plugin (skip if you already selected WhatsApp during onboarding):
 
 ```bash
-docker compose run --rm openclaw-cli plugins enable whatsapp
+docker compose exec openclaw-gateway node dist/index.js plugins enable whatsapp
 ```
 
 2. Login and scan the QR code:
 
 ```bash
-docker compose run --rm openclaw-cli channels login --channel whatsapp
+docker compose exec openclaw-gateway node dist/index.js channels login --channel whatsapp
 ```
 
 A QR code will appear in your terminal. Scan it with WhatsApp on your phone (**Settings > Linked Devices > Link a Device**).
@@ -235,20 +235,20 @@ A QR code will appear in your terminal. Scan it with WhatsApp on your phone (**S
 1. Enable the Telegram plugin (skip if you already selected Telegram during onboarding):
 
 ```bash
-docker compose run --rm openclaw-cli plugins enable telegram
+docker compose exec openclaw-gateway node dist/index.js plugins enable telegram
 ```
 
 2. Create a bot via [@BotFather](https://t.me/BotFather) on Telegram and copy the bot token.
 3. Add the bot:
 
 ```bash
-docker compose run --rm openclaw-cli channels add --channel telegram --token "YOUR_BOT_TOKEN"
+docker compose exec openclaw-gateway node dist/index.js channels add --channel telegram --token "YOUR_BOT_TOKEN"
 ```
 
 4. Send a message to your bot on Telegram. It will ask you to approve the pairing:
 
 ```bash
-docker compose run --rm openclaw-cli pairing approve telegram CODE
+docker compose exec openclaw-gateway node dist/index.js pairing approve telegram CODE
 ```
 
 Replace `CODE` with the pairing code shown in the message.
@@ -268,14 +268,14 @@ Replace `CODE` with the pairing code shown in the message.
 1. Enable the Discord plugin (skip if you already selected Discord during onboarding):
 
 ```bash
-docker compose run --rm openclaw-cli plugins enable discord
+docker compose exec openclaw-gateway node dist/index.js plugins enable discord
 ```
 
 2. Create a bot on the [Discord Developer Portal](https://discord.com/developers/applications) and copy the bot token.
 3. Add the bot:
 
 ```bash
-docker compose run --rm openclaw-cli channels add --channel discord --token "YOUR_BOT_TOKEN"
+docker compose exec openclaw-gateway node dist/index.js channels add --channel discord --token "YOUR_BOT_TOKEN"
 ```
 
 ---
@@ -289,7 +289,7 @@ OpenClaw includes a web dashboard (Control UI) for managing your instance. The s
 After running `setup.sh`, the dashboard URL is printed in the terminal. You can also retrieve it at any time:
 
 ```bash
-docker compose run --rm openclaw-cli dashboard --no-open
+docker compose exec openclaw-gateway node dist/index.js dashboard --no-open
 ```
 
 Open the printed URL in your browser. It looks like this:
@@ -356,6 +356,152 @@ Replace `YOUR_GATEWAY_TOKEN` with the token from your `.env` file.
 
 </details>
 
+<details>
+<summary>☁️ <strong>Cloudflare Tunnel + Access (recommended for remote access)</strong></summary>
+
+Cloudflare Tunnel exposes your gateway to the internet **without opening any ports** on your server. Cloudflare Access adds a Zero Trust authentication layer **in front of** the gateway — users must authenticate with Cloudflare before they even reach the OpenClaw dashboard.
+
+**What you get:**
+
+- No open ports on your server
+- TLS handled by Cloudflare (no certificate management)
+- Extra authentication layer before the gateway token
+- Your server's IP address stays hidden
+
+#### Step 1 — Install `cloudflared`
+
+```bash
+# Debian/Ubuntu
+curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | sudo tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
+echo "deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/cloudflared.list
+sudo apt update && sudo apt install -y cloudflared
+```
+
+#### Step 2 — Authenticate and create a tunnel
+
+```bash
+# Login to your Cloudflare account (opens a browser)
+cloudflared tunnel login
+
+# Create a tunnel
+cloudflared tunnel create openclaw
+```
+
+Note the **Tunnel ID** from the output — you'll need it in the next step.
+
+#### Step 3 — Configure the tunnel
+
+Create the config file at `~/.cloudflared/config.yml`:
+
+```yaml
+tunnel: <YOUR_TUNNEL_ID>
+credentials-file: /root/.cloudflared/<YOUR_TUNNEL_ID>.json
+
+ingress:
+  - hostname: pa.example.com
+    service: http://localhost:18789
+  - service: http_status:404
+```
+
+Replace `pa.example.com` with your actual domain.
+
+#### Step 4 — Create a DNS route
+
+```bash
+cloudflared tunnel route dns openclaw pa.example.com
+```
+
+This creates a CNAME record pointing your domain to the tunnel.
+
+#### Step 5 — Run as a systemd service
+
+```bash
+sudo cloudflared service install
+sudo systemctl enable cloudflared
+sudo systemctl start cloudflared
+```
+
+#### Step 6 — Set up Cloudflare Access
+
+1. Go to the [Cloudflare Zero Trust dashboard](https://one.dash.cloudflare.com/)
+2. Navigate to **Access** → **Applications** → **Add an application**
+3. Select **Self-hosted** and enter your domain (`pa.example.com`)
+4. Create a policy — for example, allow specific email addresses:
+   - **Policy name:** `OpenClaw admins`
+   - **Action:** Allow
+   - **Include:** Emails — `you@example.com`
+5. Save the application
+
+Now anyone accessing `pa.example.com` must first authenticate through Cloudflare Access before reaching the OpenClaw dashboard.
+
+#### Step 7 — Update `openclaw.json`
+
+Add your Cloudflare domain to the allowed origins:
+
+```json
+{
+  "gateway": {
+    "controlUi": {
+      "allowedOrigins": [
+        "http://localhost:18789",
+        "http://127.0.0.1:18789",
+        "https://pa.example.com"
+      ],
+      "allowInsecureAuth": true
+    }
+  }
+}
+```
+
+> `allowInsecureAuth: true` is safe here because Cloudflare terminates TLS — traffic between `cloudflared` and your local gateway stays on `localhost`.
+
+Make sure `gateway.mode` is set to `"local"` — the gateway refuses to start without it:
+
+```json
+{
+  "gateway": {
+    "mode": "local",
+    "bind": "lan"
+  }
+}
+```
+
+Restart the gateway:
+
+```bash
+docker compose restart openclaw-gateway
+```
+
+#### Step 8 — Approve the device pairing
+
+When you open the dashboard for the first time via Cloudflare, the gateway will show a **pairing request**. Approve it from the server:
+
+```bash
+# List pending pairing requests
+docker compose exec openclaw-gateway node dist/index.js devices list
+
+# Approve the request
+docker compose exec openclaw-gateway node dist/index.js devices approve <REQUEST_ID>
+```
+
+Replace `<REQUEST_ID>` with the ID shown in the list.
+
+Open the dashboard at:
+
+```
+https://pa.example.com/#token=YOUR_GATEWAY_TOKEN
+```
+
+#### Troubleshooting Cloudflare setup
+
+**"Gateway start blocked: set gateway.mode=local"** — Add `"mode": "local"` to the `gateway` object in `openclaw.json`.
+
+**Gateway ignores bind setting** — Do not use `--bind` in the docker-compose `command`. Let `openclaw.json` handle it via `"bind": "lan"`. The `--bind` CLI flag overrides the config file and can cause conflicts.
+
+**Dashboard loads but pairing fails** — Make sure `trustedProxies` includes the Docker bridge subnet (`172.17.0.0/16`) and `allowInsecureAuth` is `true`. Then approve the device pairing as shown in Step 8.
+
+</details>
+
 ---
 
 ## ⚙️ Managing Your Server
@@ -368,11 +514,11 @@ Common commands for managing your OpenClaw instance:
 | ⏹️ Stop the server      | `docker compose down`                                                            |
 | ▶️ Start the server     | `docker compose up -d`                                                           |
 | 🔄 Restart the server     | `docker compose restart openclaw-gateway`                                        |
-| 💻 Interactive TUI        | `docker compose run --rm openclaw-cli tui`                                       |
-| ⚙️ Change configuration | `docker compose run --rm openclaw-cli configure`                                 |
+| 💻 Interactive TUI        | `docker compose exec openclaw-gateway node dist/index.js tui`                                       |
+| ⚙️ Change configuration | `docker compose exec openclaw-gateway node dist/index.js configure`                                 |
 | 🔨 Rebuild after updates  | `docker compose down && docker compose build --no-cache && docker compose up -d` |
-| 🔒 Run a security audit   | `docker compose run --rm openclaw-cli security audit --deep`                     |
-| 🩺 Run doctor check       | `docker compose run --rm openclaw-cli doctor --repair`                           |
+| 🔒 Run a security audit   | `docker compose exec openclaw-gateway node dist/index.js security audit --deep`                     |
+| 🩺 Run doctor check       | `docker compose exec openclaw-gateway node dist/index.js doctor --repair`                           |
 
 ---
 
@@ -481,6 +627,22 @@ Some skills may fail to install during onboarding due to permissions. Fix it wit
 ```bash
 docker compose run --rm --user root openclaw-cli npm install -g clawhub
 ```
+
+</details>
+
+<details>
+<summary><strong>"Gateway start blocked: set gateway.mode=local"</strong></summary>
+
+The gateway requires `gateway.mode` to be set in `openclaw.json`. Add it:
+
+```bash
+docker compose exec openclaw-gateway sed -i \
+  's|"gateway": {|"gateway": {\n    "mode": "local",|' \
+  /home/node/.openclaw/openclaw.json
+docker compose restart openclaw-gateway
+```
+
+Or edit `./data/config/openclaw.json` directly and add `"mode": "local"` inside the `gateway` object.
 
 </details>
 
@@ -658,10 +820,10 @@ Run these commands regularly and after every update:
 
 ```bash
 # Detect and fix configuration issues
-docker compose run --rm openclaw-cli doctor --repair
+docker compose exec openclaw-gateway node dist/index.js doctor --repair
 
 # Deep security audit
-docker compose run --rm openclaw-cli security audit --deep
+docker compose exec openclaw-gateway node dist/index.js security audit --deep
 ```
 
 ### 🔑 Rotate your gateway token
@@ -741,8 +903,8 @@ docker compose build --no-cache
 docker compose down && docker compose up -d
 
 # 5. Run security checks
-docker compose run --rm openclaw-cli doctor --repair
-docker compose run --rm openclaw-cli security audit --deep
+docker compose exec openclaw-gateway node dist/index.js doctor --repair
+docker compose exec openclaw-gateway node dist/index.js security audit --deep
 
 # 6. Verify the gateway is healthy
 docker compose logs -f openclaw-gateway
@@ -752,7 +914,7 @@ docker compose logs -f openclaw-gateway
 <summary>⚡ <strong>Quick one-liner</strong> (for experienced users)</summary>
 
 ```bash
-cp -r ./data ./data-backup-$(date +%Y%m%d) && git pull origin main && docker compose build --no-cache && docker compose down && docker compose up -d && docker compose run --rm openclaw-cli doctor --repair
+cp -r ./data ./data-backup-$(date +%Y%m%d) && git pull origin main && docker compose build --no-cache && docker compose down && docker compose up -d && docker compose exec openclaw-gateway node dist/index.js doctor --repair
 ```
 
 </details>
@@ -864,8 +1026,8 @@ docker compose build --no-cache
 docker compose down && docker compose up -d
 
 # 7. Run security checks
-docker compose run --rm openclaw-cli doctor --repair
-docker compose run --rm openclaw-cli security audit --deep
+docker compose exec openclaw-gateway node dist/index.js doctor --repair
+docker compose exec openclaw-gateway node dist/index.js security audit --deep
 
 # 8. Verify the container is healthy
 docker inspect --format='{{.State.Health.Status}}' openclaw-gateway
@@ -875,7 +1037,7 @@ docker inspect --format='{{.State.Health.Status}}' openclaw-gateway
 <summary>⚡ <strong>Migration one-liner</strong></summary>
 
 ```bash
-cp -r ./data ./data-backup-$(date +%Y%m%d) && git pull origin main && chmod 600 .env && docker compose build --no-cache && docker compose down && docker compose up -d && docker compose run --rm openclaw-cli doctor --repair
+cp -r ./data ./data-backup-$(date +%Y%m%d) && git pull origin main && chmod 600 .env && docker compose build --no-cache && docker compose down && docker compose up -d && docker compose exec openclaw-gateway node dist/index.js doctor --repair
 ```
 
 </details>
@@ -968,7 +1130,7 @@ During onboarding, select **OpenAI** as your provider and choose the **OAuth** l
 ### Changing your model
 
 ```bash
-docker compose run --rm openclaw-cli configure
+docker compose exec openclaw-gateway node dist/index.js configure
 ```
 
 Or edit the configuration file directly at `./data/config/openclaw.json`.
@@ -996,6 +1158,7 @@ All persistent data is stored in the `./data/` directory:
 ```
 data/
 ├── config/       # OpenClaw configuration, API keys, memory
+├── config-cli/   # Minimal config for the CLI container (auto-created by setup.sh)
 └── workspace/    # Files created by the AI assistant
 ```
 
