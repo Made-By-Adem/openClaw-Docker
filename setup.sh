@@ -73,11 +73,6 @@ if [ ! -f "$CONFIG_ENV_FILE" ]; then
 # Referenced as \${VAR_NAME} in openclaw.json
 GATEWAY_TOKEN=${TOKEN}
 EOF
-  chown 1000:1000 "$CONFIG_ENV_FILE" 2>/dev/null || {
-    echo "[!]  Could not change ownership of $CONFIG_ENV_FILE to uid 1000."
-    echo "     Run: sudo chown 1000:1000 $CONFIG_ENV_FILE"
-  }
-  chmod 600 "$CONFIG_ENV_FILE"
   echo "[OK] Created $CONFIG_ENV_FILE with gateway token"
 else
   # Ensure the gateway token is synced
@@ -88,6 +83,14 @@ else
   fi
   echo "[OK] $CONFIG_ENV_FILE already exists — gateway token synced"
 fi
+
+# Always enforce correct ownership and permissions
+# The node user (uid 1000) inside the container must be able to read this file
+chown 1000:1000 "$CONFIG_ENV_FILE" 2>/dev/null || {
+  echo "[!]  Could not change ownership of $CONFIG_ENV_FILE to uid 1000."
+  echo "     Run: sudo chown 1000:1000 $CONFIG_ENV_FILE"
+}
+chmod 600 "$CONFIG_ENV_FILE"
 
 # --- Create CLI config directory ---
 # The CLI container uses a separate minimal config to avoid bind/networking conflicts
@@ -127,20 +130,25 @@ CONFIG_FILE="${OPENCLAW_CONFIG_DIR:-./data/config}/openclaw.json"
 GATEWAY_TOKEN=$(grep -oP '(?<=OPENCLAW_GATEWAY_TOKEN=).+' "$ENV_FILE")
 
 if [ -f "$CONFIG_FILE" ]; then
-  # Detect the Docker bridge subnet dynamically (falls back to default)
-  DOCKER_SUBNET=$(docker network inspect bridge --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}' 2>/dev/null || echo "172.17.0.0/16")
+  # Detect Docker subnets dynamically (bridge + compose network)
+  DOCKER_BRIDGE_SUBNET=$(docker network inspect bridge --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}' 2>/dev/null || echo "172.17.0.0/16")
+  COMPOSE_NET_SUBNET=$(docker network inspect openclaw_openclaw-net --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}' 2>/dev/null \
+    || docker network inspect openclaw-net --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}' 2>/dev/null \
+    || echo "")
 
   # Pass variables via environment to avoid shell-in-Python injection
   OC_CONFIG_FILE="$CONFIG_FILE" \
   OC_GATEWAY_TOKEN="$GATEWAY_TOKEN" \
-  OC_DOCKER_SUBNET="$DOCKER_SUBNET" \
+  OC_DOCKER_BRIDGE_SUBNET="$DOCKER_BRIDGE_SUBNET" \
+  OC_COMPOSE_NET_SUBNET="$COMPOSE_NET_SUBNET" \
   OC_ALLOW_INSECURE_AUTH="${OPENCLAW_ALLOW_INSECURE_AUTH:-false}" \
   python3 -c "
 import json, os
 
 config_file = os.environ['OC_CONFIG_FILE']
 gateway_token = os.environ['OC_GATEWAY_TOKEN']
-docker_subnet = os.environ['OC_DOCKER_SUBNET']
+bridge_subnet = os.environ['OC_DOCKER_BRIDGE_SUBNET']
+compose_subnet = os.environ.get('OC_COMPOSE_NET_SUBNET', '')
 
 with open(config_file) as f:
     cfg = json.load(f)
@@ -153,20 +161,15 @@ gw['bind'] = 'lan'
 # Mode must be 'local' — gateway refuses to start without it
 gw['mode'] = 'local'
 
-# Use env var reference instead of plaintext token
+# Replace plaintext token with env var reference
 # The actual value is stored in data/config/.env and resolved at startup
-gw.setdefault('auth', {})['mode'] = 'token'
-gw['auth']['token'] = '\${GATEWAY_TOKEN}'
+gw.setdefault('auth', {})['token'] = '\${GATEWAY_TOKEN}'
 
-# Trust Docker bridge network only (detected dynamically)
-gw['trustedProxies'] = [docker_subnet]
-
-# Rate limit auth attempts to mitigate brute-force attacks
-gw['auth']['rateLimit'] = {
-    'maxAttempts': 10,
-    'windowMs': 60000,
-    'lockoutMs': 300000
-}
+# Trust Docker networks (bridge + compose network, detected dynamically)
+trusted = [bridge_subnet]
+if compose_subnet:
+    trusted.append(compose_subnet)
+gw['trustedProxies'] = trusted
 
 # Dashboard auth over HTTP — disabled by default for security.
 # Only enable via OPENCLAW_ALLOW_INSECURE_AUTH=true if behind a TLS-terminating reverse proxy.
