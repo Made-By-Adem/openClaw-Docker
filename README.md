@@ -31,7 +31,7 @@
 >
 > **⚠️ A completely secure setup is not currently achievable.** Despite the hardening measures in this repository, **you remain fully responsible** for evaluating the risks of running OpenClaw in your environment. Do not run it on machines with access to sensitive data without understanding the implications.
 >
-> 👉 See [Security](#-security) and [SECURITY.md](SECURITY.md) for details and hardening measures.
+> 👉 See [Security](#-security) and [SECURITY.md](docs/SECURITY.md) for details and hardening measures.
 
 > **What is OpenClaw?** OpenClaw is an open-source AI assistant that connects to messaging platforms like WhatsApp, Telegram and Discord. This repository lets you self-host it in a Docker container on any Linux server — with security hardening built in.
 
@@ -52,6 +52,7 @@
 - [🔄 Updating](#-updating)
 - [📦 Migrating to Hardened Setup](#-migrating-to-hardened-setup)
 - [🤖 Choosing a Model](#-choosing-a-model)
+- [🔍 Add-ons](#-add-ons)
 - [📁 File Overview](#-file-overview)
 - [💾 Data &amp; Backups](#-data--backups)
 - [📄 License](#-license)
@@ -1137,6 +1138,16 @@ Or edit the configuration file directly at `./data/config/openclaw.json`.
 
 ---
 
+## 🔍 Add-ons
+
+Optional guides for extending your OpenClaw instance with additional services:
+
+| Add-on | Description |
+| --- | --- |
+| 🔎 [SearXNG Setup](docs/SEARXNG-SETUP.md) | Add private, self-hosted web search (70+ engines including Google, Bing, DuckDuckGo) with optional darkweb search via Tor |
+
+---
+
 ## 📁 File Overview
 
 | File                    | Description                                                          |
@@ -1146,8 +1157,8 @@ Or edit the configuration file directly at `./data/config/openclaw.json`.
 | `.env.example`        | 🔑 Template for environment variables                                |
 | `setup.sh`            | 🚀 Automated setup script with security auditing (run once)          |
 | `personalize.sh`      | 🎨 Agent personalization wizard (run after setup)                     |
-| `SECURITY.md`         | 🔒 Security policy and hardening documentation                       |
 | `.dockerignore`       | 🚫 Prevents secrets from leaking into the Docker build               |
+| `docs/`               | 📖 Additional guides (SearXNG setup, security policy, personalization) |
 
 ---
 
