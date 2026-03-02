@@ -1,6 +1,12 @@
 FROM alpine/openclaw
 
 USER root
+# Upgrade OpenClaw to latest stable release (skips beta/rc tags)
+RUN LATEST=$(npm view openclaw dist-tags.latest) && \
+    npm pack "openclaw@${LATEST}" -q && \
+    tar -xzf openclaw-*.tgz && \
+    cp -rf package/* /app/ && \
+    rm -rf package openclaw-*.tgz
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
        curl \

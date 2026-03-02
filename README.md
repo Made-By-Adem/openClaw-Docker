@@ -890,6 +890,8 @@ docker compose restart openclaw-gateway
 
 ### Step-by-step update
 
+> **How it works:** The Dockerfile automatically fetches the latest stable OpenClaw release from npm during build (skipping beta/rc versions). A `--no-cache` rebuild is all you need to upgrade.
+
 ```bash
 # 1. Back up your data
 cp -r ./data ./data-backup-$(date +%Y%m%d)
@@ -897,7 +899,7 @@ cp -r ./data ./data-backup-$(date +%Y%m%d)
 # 2. Pull the latest changes to this repo
 git pull origin main
 
-# 3. Rebuild the Docker image (picks up new base image + Dockerfile changes)
+# 3. Rebuild the Docker image (fetches latest stable OpenClaw + Dockerfile changes)
 docker compose build --no-cache
 
 # 4. Restart with the new image
