@@ -6,7 +6,8 @@ RUN LATEST=$(npm view openclaw dist-tags.latest) && \
     npm pack "openclaw@${LATEST}" -q && \
     tar -xzf openclaw-*.tgz && \
     cp -rf package/* /app/ && \
-    rm -rf package openclaw-*.tgz
+    rm -rf package openclaw-*.tgz && \
+    cd /app && rm -rf package-lock.json node_modules && npm install --omit=dev
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
        curl \
