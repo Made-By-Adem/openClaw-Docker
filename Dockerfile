@@ -31,7 +31,51 @@ RUN apt-get update \
        libxkbcommon0 \
        libxrandr2 \
        xdg-utils \
+       # Python & audio/image processing
+       python3 \
+       python3-pip \
+       python3-venv \
+       ffmpeg \
+       tesseract-ocr \
+       tesseract-ocr-nld \
+       libsndfile1 \
     && rm -rf /var/lib/apt/lists/*
+
+# Optional: Developer tools for the developer agent persona
+# Build with: docker compose build --build-arg INSTALL_DEV_TOOLS=true
+ARG INSTALL_DEV_TOOLS=false
+RUN if [ "$INSTALL_DEV_TOOLS" = "true" ]; then \
+      apt-get update && apt-get install -y --no-install-recommends \
+        git \
+        openssh-client \
+      && rm -rf /var/lib/apt/lists/* \
+      && npm install -g @anthropic-ai/claude-code; \
+    fi
+
+# Python packages for AI media processing (TTS, STT, image recognition)
+RUN python3 -m venv /opt/ai-tools && \
+    /opt/ai-tools/bin/pip install --no-cache-dir \
+       openai \
+       faster-whisper \
+       edge-tts \
+       pydub \
+       soundfile \
+       Pillow \
+       pytesseract \
+    && chmod -R a+rX /opt/ai-tools
+
+ENV PATH="/opt/ai-tools/bin:${PATH}"
+
+# Audio processing scripts (STT via faster-whisper, TTS via edge-tts)
+COPY scripts/stt.py scripts/tts.py /opt/ai-tools/bin/
+RUN chmod +x /opt/ai-tools/bin/stt.py /opt/ai-tools/bin/tts.py
+
+# Pre-download Whisper base model so first transcription is instant
+RUN /opt/ai-tools/bin/python -c "\
+from faster_whisper import WhisperModel; \
+WhisperModel('base', device='cpu', compute_type='int8', download_root='/opt/ai-tools/whisper-models')" \
+    && chmod -R a+rX /opt/ai-tools/whisper-models
+ENV WHISPER_CACHE_DIR=/opt/ai-tools/whisper-models
 
 # Wrapper that always starts Chromium with --no-sandbox (required in Docker)
 RUN printf '#!/bin/sh\nexec /usr/bin/chromium --no-sandbox --disable-gpu --disable-dev-shm-usage "$@"\n' \

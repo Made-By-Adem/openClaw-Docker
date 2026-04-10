@@ -24,15 +24,15 @@ Your name, timezone, language, and communication preferences. The more context y
 
 ### 🤖 `AGENTS.md` — How your agent behaves
 
-Session startup routine, memory management, safety rules, group chat etiquette, and tool usage guidelines. Ships with sensible defaults — customize what matters to you.
+Operational rules — skill routing triggers, memory scope, audio/media rules, group chat behavior, and heartbeat protocol. Ships with sensible defaults — customize what matters to you.
 
 ### 📐 `CONVENTIONS.md` — Your project standards
 
 Terminology, coding standards, git workflow, and branch naming conventions. Primarily useful if your agent helps with development work. Skip if you don't code.
 
-### 🔧 `TOOLS.md` — Your integrations
+### 🔧 `TOOLS.md` — Your local cheat sheet
 
-Document scripts, APIs, and credentials your agent needs. Email accounts, calendar integrations, home automation, GitHub — anything the agent should know how to use.
+Workspace structure map, available tools, TTS/audio rules, platform formatting notes, and per-skill quick reference (base URLs, credentials location, scripts path).
 
 ### 💓 `HEARTBEAT.md` — Periodic tasks
 
@@ -67,4 +67,21 @@ nano ./data/workspace/SOUL.md
 docker compose restart openclaw-gateway
 ```
 
-Your agent reads these files at the start of every session — changes take effect on the next conversation.
+OpenClaw auto-injects these files into the agent's system prompt — changes take effect on the next conversation.
+
+---
+
+## 📂 Workspace Directories
+
+The setup script also creates these directories in your workspace:
+
+| Directory | Purpose |
+| --- | --- |
+| `skills/` | Custom skills — each skill has its own folder with a `SKILL.md` contract |
+| `secrets/` | Credentials per skill (`.env` files, never committed to git) |
+| `memory/` | Daily session logs (`YYYY-MM-DD.md`, written by the agent) |
+| `files/` | Reference library (PDFs, exports) |
+| `docs/` | Large documents (loaded only on request) |
+| `tmp/` | Working files, intermediate results |
+
+For the full workspace architecture and file conventions, see [Workspace Architecture](WORKSPACE-ARCHITECTURE.md). For creating custom skills, see [Skill Development](SKILL-DEVELOPMENT.md).

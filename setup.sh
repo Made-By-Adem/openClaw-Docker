@@ -26,6 +26,17 @@ echo "[OK] Docker and Docker Compose found"
 # --- Create data directories ---
 mkdir -p ./data/config
 mkdir -p ./data/workspace
+mkdir -p ./data/workspace/skills
+mkdir -p ./data/workspace/secrets
+mkdir -p ./data/workspace/memory
+mkdir -p ./data/workspace/files
+mkdir -p ./data/workspace/tmp
+mkdir -p ./data/workspace/docs
+
+# Protect secrets directory — ensure .env files are never committed
+if [ ! -f "./data/workspace/secrets/.gitignore" ]; then
+  printf '# Never commit secrets\n*.env\n!.gitignore\n' > ./data/workspace/secrets/.gitignore
+fi
 
 # Ensure the node user (uid 1000) has write permissions
 chown -R 1000:1000 ./data 2>/dev/null || {
@@ -34,7 +45,7 @@ chown -R 1000:1000 ./data 2>/dev/null || {
   echo "     sudo chown -R 1000:1000 ./data"
 }
 
-echo "[OK] Data directories created (./data/config, ./data/workspace)"
+echo "[OK] Data directories created (config, workspace, skills, secrets, memory, files, tmp, docs)"
 
 # --- Create .env from template if it doesn't exist ---
 ENV_FILE=".env"
@@ -240,16 +251,35 @@ echo " Your gateway token is stored in .env"
 echo " Open the dashboard:  http://127.0.0.1:18789"
 echo " (append /#token=YOUR_TOKEN — find the token in your .env file)"
 echo ""
-echo " Useful commands:"
+echo "--------------------------------------------"
+echo " NEXT STEPS"
+echo "--------------------------------------------"
+echo ""
+echo " 1. Personalize your agent (give it a name, personality, and context):"
+echo "    chmod +x personalize.sh && ./personalize.sh"
+echo ""
+echo " 2. Set up agent personas (developer, assistant, marketeer):"
+echo "    chmod +x agents.sh && ./agents.sh init"
+echo "    Your agent will switch roles automatically based on the task."
+echo "    See docs/AGENTS-GUIDE.md for details."
+echo ""
+echo " 3. Add a messaging channel:"
+echo "    docker compose exec openclaw-gateway node dist/index.js plugins enable whatsapp"
+echo "    docker compose exec openclaw-gateway node dist/index.js channels login --channel whatsapp"
+echo ""
+echo "--------------------------------------------"
+echo " USEFUL COMMANDS"
+echo "--------------------------------------------"
+echo ""
 echo "   docker compose logs -f openclaw-gateway    # View logs"
 echo "   docker compose down                        # Stop"
 echo "   docker compose up -d                       # Start"
+echo "   docker compose restart openclaw-gateway    # Restart after config changes"
 echo ""
 echo " Run CLI commands (gateway must be running):"
 echo "   docker compose exec openclaw-gateway node dist/index.js <command>"
 echo ""
-echo " Add channels:"
-echo "   docker compose exec openclaw-gateway node dist/index.js plugins enable whatsapp                     # Enable WhatsApp plugin"
+echo " Channels:"
 echo "   docker compose exec openclaw-gateway node dist/index.js channels login --channel whatsapp           # WhatsApp (scan QR)"
 echo "   docker compose exec openclaw-gateway node dist/index.js channels add --channel telegram --token T   # Telegram"
 echo "   docker compose exec openclaw-gateway node dist/index.js channels add --channel discord --token T    # Discord"
@@ -261,8 +291,14 @@ echo ""
 echo " Token rotation (recommended periodically):"
 echo "   1. Generate a new token:  openssl rand -hex 32"
 echo "   2. Update .env with the new token"
-echo "   3. Update data/config/openclaw.json → gateway.auth.token"
+echo "   3. Update data/config/.env with the new token"
 echo "   4. Restart:  docker compose restart openclaw-gateway"
+echo ""
+echo " Documentation:"
+echo "   docs/WORKSPACE-ARCHITECTURE.md   # How workspace files work"
+echo "   docs/SKILL-DEVELOPMENT.md        # Create custom skills"
+echo "   docs/AGENTS-GUIDE.md             # Multi-agent personas"
+echo "   docs/SECURITY.md                 # Security hardening"
 echo ""
 echo " Remote dashboard (via reverse proxy):"
 echo "   See README.md for reverse proxy and security setup."

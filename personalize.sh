@@ -30,7 +30,7 @@ print_header() {
 }
 
 print_step() {
-  echo -e "${CYAN}[$1/7]${NC} ${BOLD}$2${NC}"
+  echo -e "${CYAN}[$1/8]${NC} ${BOLD}$2${NC}"
 }
 
 print_info() {
@@ -173,13 +173,14 @@ echo "This script helps you personalize your AI agent by creating"
 echo "configuration files in the workspace directory."
 echo ""
 echo "You'll configure:"
-echo "  1. IDENTITY.md  — Your agent's name, role, and personality"
-echo "  2. SOUL.md      — Core values and communication style"
-echo "  3. USER.md      — About you (the human)"
-echo "  4. AGENTS.md    — Behavioral guidelines"
+echo "  1. IDENTITY.md    — Your agent's name, role, and personality"
+echo "  2. SOUL.md        — Core values and communication style"
+echo "  3. USER.md        — About you (the human)"
+echo "  4. AGENTS.md      — Operational rules and skill routing"
 echo "  5. CONVENTIONS.md — Coding & project standards"
-echo "  6. TOOLS.md     — Integrations and tool notes"
-echo "  7. HEARTBEAT.md — Periodic task checklist"
+echo "  6. TOOLS.md       — Workspace structure and tool notes"
+echo "  7. HEARTBEAT.md   — Periodic task checklist"
+echo "  8. Agent Personas — Specialized roles (developer, assistant, etc.)"
 echo ""
 echo -e "${DIM}You can skip any file to use the default template.${NC}"
 echo -e "${DIM}All files can be edited later in: $WORKSPACE_DIR/${NC}"
@@ -220,7 +221,7 @@ read -rp "Press Enter to start personalization..."
 # 1. IDENTITY.md — Prompts → Editor
 # ============================================
 
-print_header "1/7 — IDENTITY.md"
+print_header "1/8 — IDENTITY.md"
 echo "This file defines who your agent is: their name, personality,"
 echo "role, and how they introduce themselves."
 echo ""
@@ -274,6 +275,13 @@ done)
 
 "$AGENT_INTRO"
 
+## Orchestrator Role
+
+<!-- CUSTOMIZE: Remove this section if you don't use multi-agent personas. -->
+<!-- As orchestrator, you coordinate specialized agent personas in agents/. -->
+<!-- You decide which persona handles each task based on AGENTS.md routing. -->
+<!-- When no persona matches, you handle the task directly. -->
+
 ---
 
 _Update this file as your agent's role evolves._
@@ -321,7 +329,7 @@ done
 # 2. SOUL.md — Template → Editor
 # ============================================
 
-print_header "2/7 — SOUL.md"
+print_header "2/8 — SOUL.md"
 echo "This is your agent's soul — core values, personality traits,"
 echo "and communication philosophy. It shapes HOW your agent talks."
 echo ""
@@ -376,15 +384,9 @@ _These are your core values. They shape everything you do._
 - Never send half-baked replies to messaging surfaces.
 - You're not the user's voice — be careful in group chats.
 
-## Continuity
-
-Each session, you wake up fresh. These files _are_ your memory. Read them. Update them. They're how you persist.
-
-If you change this file, tell your human — it's your soul, and they should know.
-
 ---
 
-_This file is yours to evolve. As you learn who you are, update it._
+_This file is yours to evolve. If you change it, tell your human — it's your soul, and they should know._
 SOUL_EOF
 
 print_ok "SOUL.md generated"
@@ -429,7 +431,7 @@ done
 # 3. USER.md — Prompts → Editor
 # ============================================
 
-print_header "3/7 — USER.md"
+print_header "3/8 — USER.md"
 echo "This file tells your agent about YOU — the human it's helping."
 echo "Name, timezone, preferences, communication style."
 echo ""
@@ -464,7 +466,7 @@ cat > "$WORKSPACE_DIR/USER.md" << USER_EOF
 
 ---
 
-_Update this as your life changes. Your agent reads this every session._
+_Update this as your life changes. Auto-injected by OpenClaw — no manual loading needed._
 USER_EOF
 
 print_ok "USER.md generated from your answers"
@@ -508,90 +510,89 @@ done
 # 4. AGENTS.md — Defaults → Editor
 # ============================================
 
-print_header "4/7 — AGENTS.md"
+print_header "4/8 — AGENTS.md"
 echo "Behavioral guidelines for your agent: how it handles sessions,"
 echo "memory, safety, group chats, and more."
 echo "This file has sensible defaults — customize if needed."
 echo ""
 
 cat > "$WORKSPACE_DIR/AGENTS.md" << 'AGENTS_EOF'
-# AGENTS.md - Your Workspace
+# AGENTS.md — Operational Rules
 
-_This is your workspace. Keep it clean, keep it useful._
+## Skill Routing
 
-## Every Session
+<!-- CUSTOMIZE: Add your skills below. Per skill: trigger words, action, twijfel-regel. -->
+<!-- Example:
+| Trigger | Skill | Action |
+|---------|-------|--------|
+| "licht", "lamp", "thermostat", "sensor", home automation keywords | Home Assistant | Load `skills/ha/SKILL.md`, authenticate, execute |
+| "email", "inbox", "mail", "stuur bericht" | Gmail | Load `skills/gmail/SKILL.md`, authenticate |
+| voice message received | Audio | Use stt.py to transcribe, reply with tts.py |
 
-Before doing anything else:
+**When in doubt:** better to load one skill too many than too late.
+-->
 
-1. Read `SOUL.md` — this is who you are
-2. Read `USER.md` — this is who you're helping
-3. Read `memory/YYYY-MM-DD.md` (today + yesterday) for recent context
-4. If in main session (direct chat): Also read `MEMORY.md`
+## Audio & Media
+
+- Audio in → audio out (always), unless explicit transcription requested
+- Images → analyze, apply relevant skill (screenshot of error → support skill)
 
 ## Memory
 
-You wake up fresh each session. These files are your continuity:
+- **Daily notes** (`memory/YYYY-MM-DD.md`) are NOT auto-injected — load today + yesterday yourself
+- **MEMORY.md** is auto-injected in main session only
+- When someone says "remember this" → write to the relevant file
+- Use `memory_search` before answering questions about past work
 
-- **Daily notes:** `memory/YYYY-MM-DD.md` — raw logs of what happened
-- **Long-term:** `MEMORY.md` — curated memories
-
-Capture what matters. Decisions, context, things to remember.
-
-### Write It Down
-
-- Memory is limited — if you want to remember something, WRITE IT TO A FILE
-- "Mental notes" don't survive session restarts. Files do.
-- When someone says "remember this" → update the relevant file
-
-## Safety
-
-- Don't exfiltrate private data. Ever.
-- Don't run destructive commands without asking.
-- When in doubt, ask.
-
-## External vs Internal
-
-**Safe to do freely:**
-- Read files, explore, organize, learn
-- Search the web, check calendars
-- Work within this workspace
-
-**Ask first:**
-- Sending emails, messages, public posts
-- Anything that leaves the machine
-- Anything you're uncertain about
+### Scope
+<!-- CUSTOMIZE: Define where MEMORY.md may/may not be loaded (privacy). -->
+- Main session (DM): full MEMORY.md access
+- Group chats: no MEMORY.md (privacy)
 
 ## Group Chats
 
 <!-- CUSTOMIZE: Remove this section if you don't use group chats. -->
+**Respond when:** directly mentioned, asked a question, or you can add genuine value.
+**Stay silent when:** casual banter, already answered, conversation flows without you.
 
-**Respond when:**
-- Directly mentioned or asked a question
-- You can add genuine value
-- Something witty/funny fits naturally
-
-**Stay silent when:**
-- It's just casual banter between humans
-- Someone already answered the question
-- The conversation is flowing fine without you
-
-## Tools
-
-Skills provide your tools. When you need one, check its `SKILL.md`.
-Keep local notes (API keys, preferences) in `TOOLS.md`.
-
-## Heartbeats
+## Heartbeat
 
 When you receive a heartbeat poll, check `HEARTBEAT.md` for tasks.
 If nothing needs attention, reply `HEARTBEAT_OK`.
 
-<!-- CUSTOMIZE: Add your own conventions and rules as you figure out what works. -->
+## External Actions
 
-## Context Management
+**Safe (do freely):** read files, explore, organize, search, work within workspace.
+**Ask first:** emails, messages, public posts, anything that leaves the machine.
 
-- Large docs: load only when explicitly needed
-- Use `memory_search` before answering questions about past work
-- Goal: minimize context = lower costs
+## Agent Personas
+
+<!-- CUSTOMIZE: Remove this section if you don't use multi-agent personas. -->
+<!-- Agent persona files live in agents/ and define specialized roles. -->
+<!-- When a task matches a persona's activation triggers, adopt that role. -->
+
+<!-- Example:
+### Delegation Rules
+
+| Task type | Persona | File |
+|-----------|---------|------|
+| Code, PRs, debugging | Developer | `agents/developer.md` |
+| Email, calendar, reminders | Assistant | `agents/assistant.md` |
+| Content, social media | Marketeer | `agents/marketeer.md` |
+
+### How delegation works
+1. Read the task/message
+2. Match against persona activation triggers
+3. Load the matching persona file
+4. Adopt that persona's role, workflow, and communication style
+5. When done, return to orchestrator mode
+
+### Rules
+- One persona at a time — don't mix communication styles
+- If a task spans multiple personas, break it into sub-tasks
+- When no persona matches, handle it as the main orchestrator
+- Always log persona switches in daily notes
+-->
 AGENTS_EOF
 
 print_ok "AGENTS.md created with sensible defaults"
@@ -600,22 +601,22 @@ while true; do
   action=$(ask_action "AGENTS.md")
   case "$action" in
     view)
-      show_example "# AGENTS.md - Your Workspace
+      show_example "# AGENTS.md — Operational Rules
 
-## Every Session
-1. Read SOUL.md — this is who you are
-2. Read USER.md — this is who you're helping
-3. Read today's memory file for recent context
+## Skill Routing
+| Trigger | Skill | Action |
+|---------|-------|--------|
+| \"licht\", \"lamp\", \"thermostat\" | Home Assistant | Load skills/ha/SKILL.md |
+| \"email\", \"inbox\", \"mail\" | Gmail | Load skills/gmail/SKILL.md |
+| voice message received | Audio | Transcribe with stt.py |
+
+## Audio & Media
+- Audio in → audio out (always)
+- Images → analyze, apply relevant skill
 
 ## Memory
-- Daily notes in memory/YYYY-MM-DD.md
-- Long-term curated memories in MEMORY.md
-- Write it down — mental notes don't survive restarts
-
-## Safety
-- Don't exfiltrate private data
-- Don't run destructive commands without asking
-- Ask before sending anything external
+- Daily notes (memory/YYYY-MM-DD.md) — load yourself
+- MEMORY.md — auto-injected in main session only
 
 ## Group Chats
 - Respond when mentioned or can add value
@@ -638,7 +639,7 @@ done
 # 5. CONVENTIONS.md — Template → Editor
 # ============================================
 
-print_header "5/7 — CONVENTIONS.md"
+print_header "5/8 — CONVENTIONS.md"
 echo "Coding standards, git workflow, and project conventions."
 echo "Useful if your agent helps with development work."
 echo ""
@@ -719,43 +720,91 @@ done
 # 6. TOOLS.md — Template → Editor
 # ============================================
 
-print_header "6/7 — TOOLS.md"
+print_header "6/8 — TOOLS.md"
 echo "Document your integrations and tools here: API endpoints,"
 echo "scripts, credentials locations, and usage notes."
 echo ""
 
 cat > "$WORKSPACE_DIR/TOOLS.md" << 'TOOLS_EOF'
-# TOOLS.md - Local Notes
+# TOOLS.md — Local Cheat Sheet
 
-Skills define _how_ tools work. This file is for _your_ specifics — the stuff that's unique to your setup.
+## Workspace Structure
 
----
+```text
+workspace/
+├── AGENTS.md            # Operational rules, skill routing (auto-injected)
+├── SOUL.md              # Personality, values, boundaries (auto-injected)
+├── IDENTITY.md          # Name, roles, language (auto-injected)
+├── USER.md              # Human profiles & preferences (auto-injected)
+├── TOOLS.md             # This file (auto-injected)
+├── MEMORY.md            # Long-term memory index (auto-injected)
+├── HEARTBEAT.md         # Periodic tasks (auto-injected)
+├── CONVENTIONS.md       # Code/git standards (auto-injected, optional)
+├── secrets/             # .env files per skill — NEVER echo in chat
+│   └── <skill>.env
+├── skills/
+│   └── <skill-name>/
+│       ├── SKILL.md     # Skill contract — load when skill triggers
+│       ├── scripts/     # Executable scripts (sh/py)
+│       └── references/  # Deep docs, runbooks, API specs
+├── memory/
+│   └── YYYY-MM-DD.md    # Daily session logs — load yourself
+├── files/               # Reference library (PDFs, exports)
+├── docs/                # Large docs — load ONLY on request
+└── tmp/                 # Temp files, intermediate results
+```
 
-<!-- CUSTOMIZE: Add your integrations below. -->
-<!-- For each integration, document: what it is, how to use it, any credentials needed. -->
+## Available Tools
 
+- **Read/Write** — file operations within workspace
+- **Bash** — shell commands (curl, python3, node available)
+- **curl** — HTTP requests (prefer over Python urllib or WebFetch)
+- **python3** — JSON parsing, data processing, AI tools
+- **node** — complex logic, API integrations
+- **memory_search** — search past conversations and memory files
+- **Browser** — Chromium (automated, no sandbox)
+
+## What You Must Load Yourself
+
+| Situation | Load |
+|-----------|------|
+| Skill triggered (see AGENTS.md routing) | `skills/<skill>/SKILL.md` |
+| Need recent context | `memory/YYYY-MM-DD.md` (today + yesterday) |
+| Deep reference needed | Specific section from `skills/<skill>/references/` |
+| User asks about a document | Relevant file from `files/` or `docs/` |
+
+**Everything else** (SOUL.md, USER.md, IDENTITY.md, AGENTS.md, TOOLS.md, MEMORY.md, HEARTBEAT.md) **is auto-injected by OpenClaw.** Do NOT re-read these at session start.
+
+## TTS & Audio
+
+- **STT (incoming voice):** `python3 /opt/ai-tools/bin/stt.py <audio> --language nl --model base`
+- **TTS (audio reply):** `python3 /opt/ai-tools/bin/tts.py "tekst" /tmp/reply.mp3`
+- **Rule:** audio in → audio out. Text in → text out.
+- **Output to /tmp/** — audio files are temporary
+- **Voices:** nl-NL-ColetteNeural (default), nl-NL-MaartenNeural, en-US-JennyNeural, en-US-GuyNeural
+- **List voices:** `python3 /opt/ai-tools/bin/tts.py --list-voices nl`
+- **Cost note:** TTS is free (edge-tts), STT is local (faster-whisper). No API costs.
+
+## Platform Formatting
+
+<!-- CUSTOMIZE: Add platform-specific formatting notes. -->
 <!-- Example:
-
-## Email
-- **Account:** you@example.com
-- **Script:** `~/.openclaw/scripts/email.js`
-- **Commands:**
-  - `node email.js unread` — list unread
-  - `node email.js send '{"to":"...","subject":"...","body":"..."}'` — send
-
-## Calendar
-- **Script:** `~/.openclaw/scripts/calendar.js`
-- **Timezone:** UTC
-
-## Home Automation
-- **URL:** https://your-home-assistant.local
-- **Script:** `~/.openclaw/scripts/ha.sh`
-
+| Platform | Markdown | Max length | Notes |
+|----------|----------|------------|-------|
+| WhatsApp | Basic (*bold*, _italic_) | ~65k chars | No code blocks, no tables |
+| Telegram | Full markdown | 4096 chars | Code blocks work, split long messages |
+| Discord  | Full markdown | 2000 chars | Code blocks, embeds available |
 -->
 
----
+## Skill Notes
 
-_Add whatever helps you do your job. This is your cheat sheet._
+<!-- CUSTOMIZE: Per-skill quick reference. -->
+<!-- Example:
+| Skill | Base URL | Credentials | Script |
+|-------|----------|-------------|--------|
+| Home Assistant | https://ha.local:8123 | secrets/ha.env | skills/ha/scripts/ha.sh |
+| Gmail | https://gmail.googleapis.com | secrets/gmail.env | skills/gmail/scripts/gmail.js |
+-->
 TOOLS_EOF
 
 print_ok "TOOLS.md created"
@@ -764,22 +813,29 @@ while true; do
   action=$(ask_action "TOOLS.md")
   case "$action" in
     view)
-      show_example "# TOOLS.md - Local Notes
+      show_example "# TOOLS.md — Local Cheat Sheet
 
-## Gmail
-- **Account:** you@example.com
-- **Script:** ~/.openclaw/scripts/gmail.js
-- **Commands:**
-  - unread [max] — list unread inbox
-  - send '{\"to\":\"...\",\"subject\":\"...\",\"body\":\"...\"}' — send
+## Workspace Structure
+workspace/
+├── skills/<name>/SKILL.md    # Load when skill triggers
+├── secrets/<name>.env        # Credentials per skill
+├── memory/YYYY-MM-DD.md      # Load yourself (not auto-injected)
+└── (all .md files at root are auto-injected)
 
-## Home Assistant
-- **URL:** https://smarthome.example.com
-- **Script:** ~/.openclaw/scripts/ha.sh
+## What You Must Load Yourself
+| Situation | Load |
+|-----------|------|
+| Skill triggered | skills/<skill>/SKILL.md |
+| Need recent context | memory/YYYY-MM-DD.md |
 
-## GitHub
-- **Account:** your-username
-- **Script:** ~/.openclaw/scripts/github.js"
+## TTS & Audio
+- STT: python3 /opt/ai-tools/bin/stt.py <audio> --language nl
+- TTS: python3 /opt/ai-tools/bin/tts.py \"tekst\" /tmp/reply.mp3
+
+## Skill Notes
+| Skill | Base URL | Credentials |
+|-------|----------|-------------|
+| Home Assistant | https://ha.local:8123 | secrets/ha.env |"
       ;;
     edit)
       open_editor "$WORKSPACE_DIR/TOOLS.md"
@@ -798,7 +854,7 @@ done
 # 7. HEARTBEAT.md — Template → Editor
 # ============================================
 
-print_header "7/7 — HEARTBEAT.md"
+print_header "7/8 — HEARTBEAT.md"
 echo "Define periodic tasks your agent should check on."
 echo "Leave empty to disable heartbeat checks."
 echo ""
@@ -865,6 +921,66 @@ print_ok "memory/ directory ready"
 
 
 # ============================================
+# 9. Agent Personas — Optional setup
+# ============================================
+
+print_header "8/8 — Agent Personas (optional)"
+echo "Without personas, your agent handles everything the same way."
+echo "With personas, it switches between specialized roles automatically:"
+echo ""
+echo -e "  ${CYAN}Developer${NC}  — When you ask about code, PRs, or bugs → technical mode"
+echo -e "  ${CYAN}Assistant${NC}  — When you ask about email, calendar → organized, efficient"
+echo -e "  ${CYAN}Marketeer${NC}  — When you ask about content, posts → creative, brand-aware"
+echo ""
+echo "Each persona has its own workflow, communication style, and rules."
+echo "Your agent reads the task, picks the right hat, and switches."
+echo ""
+echo -e "${BOLD}Example:${NC}"
+echo -e "  You: ${DIM}\"Fix the login bug on the main branch\"${NC}"
+echo -e "  Agent: ${DIM}(loads developer persona → creates branch → implements fix → opens PR)${NC}"
+echo ""
+echo -e "  You: ${DIM}\"What's on my calendar tomorrow?\"${NC}"
+echo -e "  Agent: ${DIM}(loads assistant persona → checks calendar → gives concise summary)${NC}"
+echo ""
+
+SETUP_AGENTS=$(ask_choice "Set up agent personas?" "Yes — install default personas" "Skip — I'll set this up later")
+
+if [[ "$SETUP_AGENTS" == "Yes — install default personas" ]]; then
+  mkdir -p "$WORKSPACE_DIR/agents"
+
+  local_count=0
+  for tpl in ./templates/agents/*.md; do
+    [ -f "$tpl" ] || continue
+    tpl_name=$(basename "$tpl")
+    # Skip blank template
+    if [ "$tpl_name" = "blank.md" ]; then
+      continue
+    fi
+    if [ ! -f "$WORKSPACE_DIR/agents/$tpl_name" ]; then
+      cp "$tpl" "$WORKSPACE_DIR/agents/$tpl_name"
+      echo -e "  ${GREEN}✓${NC} $tpl_name"
+      local_count=$((local_count + 1))
+    else
+      echo -e "  ${DIM}skip${NC}  $tpl_name (already exists)"
+    fi
+  done
+
+  if [ "$local_count" -gt 0 ]; then
+    print_ok "$local_count persona(s) installed to $WORKSPACE_DIR/agents/"
+  else
+    print_ok "All personas already installed"
+  fi
+
+  echo ""
+  echo -e "${DIM}Edit personas in $WORKSPACE_DIR/agents/ to match your needs.${NC}"
+  echo -e "${DIM}See docs/AGENTS-GUIDE.md for the full multi-agent guide.${NC}"
+else
+  mkdir -p "$WORKSPACE_DIR/agents"
+  print_ok "Agent personas skipped. Run ./agents.sh init later to install them."
+fi
+
+
+# ============================================
 # Restart OpenClaw
 # ============================================
 
@@ -879,6 +995,17 @@ for f in IDENTITY.md SOUL.md USER.md AGENTS.md CONVENTIONS.md TOOLS.md HEARTBEAT
     echo -e "  ${RED}✗${NC} $f (missing)"
   fi
 done
+
+echo ""
+echo "Workspace directories:"
+for d in skills secrets memory files docs tmp; do
+  if [ -d "$WORKSPACE_DIR/$d" ]; then
+    echo -e "  ${GREEN}✓${NC} $d/"
+  fi
+done
+echo ""
+echo -e "${DIM}Add custom skills in skills/ (see templates/skills/ for examples)${NC}"
+echo -e "${DIM}Store credentials in secrets/<skill>.env${NC}"
 
 echo ""
 echo "Restarting OpenClaw to apply changes..."

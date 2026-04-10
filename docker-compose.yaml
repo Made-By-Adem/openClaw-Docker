@@ -1,6 +1,9 @@
 services:
   openclaw-gateway:
-    build: .
+    build:
+      context: .
+      args:
+        INSTALL_DEV_TOOLS: ${INSTALL_DEV_TOOLS:-false}
     image: openclaw-custom
     container_name: openclaw-gateway
     environment:
@@ -9,6 +12,8 @@ services:
       OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
       CHROME_BIN: /usr/local/bin/chromium-docker
       CHROMIUM_FLAGS: "--no-sandbox --disable-gpu --disable-dev-shm-usage"
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      XDG_CACHE_HOME: /home/node/.cache
     volumes:
       - ${OPENCLAW_CONFIG_DIR:-./data/config}:/home/node/.openclaw
       - ${OPENCLAW_WORKSPACE_DIR:-./data/workspace}:/home/node/.openclaw/workspace
@@ -20,8 +25,9 @@ services:
     restart: unless-stopped
     read_only: true
     tmpfs:
-      - /tmp:size=256m
+      - /tmp:size=1g
       - /home/node/.openclaw/browser:size=512m
+      - /home/node/.cache:size=2g
     cap_drop:
       - ALL
     security_opt:

@@ -20,18 +20,8 @@
 ---
 
 > [!CAUTION]
->
-> ## ⛔🔴 Security Warning — Read Before Use
->
-> **OpenClaw is still new and actively in development.** The creators themselves and independent security researchers warn about significant security risks:
->
-> - 🔓 [Aikido](https://www.aikido.dev/blog/why-trying-to-secure-openclaw-is-ridiculous) — *"Why trying to secure OpenClaw is ridiculous"*
-> - 🏢 [Microsoft](https://www.microsoft.com/en-us/security/blog/2026/02/19/running-openclaw-safely-identity-isolation-runtime-risk/) — *"Run OpenClaw only in fully isolated environments"*
-> - 🌐 [Cisco](https://blogs.cisco.com/ai/personal-ai-agents-like-openclaw-are-a-security-nightmare) — *"Personal AI agents like OpenClaw are a security nightmare"*
->
-> **⚠️ A completely secure setup is not currently achievable.** Despite the hardening measures in this repository, **you remain fully responsible** for evaluating the risks of running OpenClaw in your environment. Do not run it on machines with access to sensitive data without understanding the implications.
->
-> 👉 See [Security](#-security) and [SECURITY.md](docs/SECURITY.md) for details and hardening measures.
+> **OpenClaw is new and has known security risks.** Independent researchers (Aikido, Microsoft, Cisco) warn about vulnerabilities. This repo includes hardening measures, but a completely secure setup is not currently achievable. Do not run on machines with sensitive data without understanding the risks.
+> See [Security](#-security) and [SECURITY.md](docs/SECURITY.md) for details.
 
 > **What is OpenClaw?** OpenClaw is an open-source AI assistant that connects to messaging platforms like WhatsApp, Telegram and Discord. This repository lets you self-host it in a Docker container on any Linux server — with security hardening built in.
 
@@ -40,6 +30,7 @@
 ## 📋 Table of Contents
 
 - [📦 What&#39;s Included](#-whats-included)
+- [📚 Documentation](#-documentation)
 - [✅ Prerequisites](#-prerequisites)
 - [🚀 Installation](#-installation)
 - [🎨 Personalization](#-personalization)
@@ -67,8 +58,22 @@ This project adds a thin Docker layer on top of the official `alpine/openclaw` i
 - 🐳 A `--no-sandbox` wrapper so Chromium runs correctly inside Docker
 - 🔧 Execute-permission fixes for bundled skill scripts
 - 🔒 **Security hardening** — read-only filesystem, dropped capabilities, rate limiting, health checks
+- 🎙️ **Voice message support** — local speech-to-text (faster-whisper) and text-to-speech (edge-tts), no external APIs needed
 
 Everything else is standard OpenClaw — no custom code.
+
+---
+
+## 📚 Documentation
+
+| Guide | Description |
+| --- | --- |
+| [Workspace Architecture](docs/WORKSPACE-ARCHITECTURE.md) | How workspace files are structured, what each file does, conventions to follow |
+| [Skill Development](docs/SKILL-DEVELOPMENT.md) | How to create, structure, and maintain custom skills |
+| [Personalization](docs/PERSONALIZATION.md) | Quick reference for the personalization script and workspace files |
+| [Multi-Agent Guide](docs/AGENTS-GUIDE.md) | Give your agent specialized roles — it switches between developer, assistant, marketeer (or custom) based on what you ask |
+| [Security](docs/SECURITY.md) | Security hardening details, container isolation, recommended practices |
+| [SearXNG Setup](docs/SEARXNG-SETUP.md) | Add private self-hosted web search with optional Tor support |
 
 ---
 
@@ -207,7 +212,7 @@ For each file, you can:
 The script restarts OpenClaw automatically when done. You can also edit these files manually at any time in `./data/workspace/` and restart with `docker compose restart openclaw-gateway`.
 
 > [!TIP]
-> Check the `workspace/` directory in this repository for a complete example of a personalized agent workspace.
+> For advanced workspace configuration (skill routing, workspace structure, file separation conventions), see [Workspace Architecture](docs/WORKSPACE-ARCHITECTURE.md). For creating custom skills, see [Skill Development](docs/SKILL-DEVELOPMENT.md).
 
 ---
 
@@ -1126,7 +1131,7 @@ During onboarding, select **OpenAI** as your provider and choose the **OAuth** l
 - **Set a monthly budget limit** with your API provider to avoid surprises.
 - **Minimize context size.** Only load documents and files when they're actually needed.
 - **Longer conversations cost more.** Each message includes the full history — consider restarting conversations when the topic changes.
-- **Use text-to-speech sparingly.** Configure it to only generate audio when the user sends a voice message.
+- **Use text-to-speech sparingly.** Audio replies are generated only when the user sends a voice message (see [Voice & Audio](templates/skills/audio/SKILL.md)).
 - **Skills and tools add cost.** Browser automation and other skills generate extra API calls.
 - **Test in low-traffic environments first.** Test with one or two users before connecting a busy group chat.
 
@@ -1147,20 +1152,28 @@ Optional guides for extending your OpenClaw instance with additional services:
 | Add-on | Description |
 | --- | --- |
 | 🔎 [SearXNG Setup](docs/SEARXNG-SETUP.md) | Add private, self-hosted web search (70+ engines including Google, Bing, DuckDuckGo) with optional darkweb search via Tor |
+| 🎙️ [Voice & Audio](templates/skills/audio/SKILL.md) | How voice messages work — local STT (faster-whisper) and TTS (edge-tts), voice selection, customization |
+| 🎭 [Multi-Agent Guide](docs/AGENTS-GUIDE.md) | Give your agent specialized roles that activate automatically — better output, consistent behavior, less repetition |
+| 🏗️ [Workspace Architecture](docs/WORKSPACE-ARCHITECTURE.md) | How workspace files are structured, what each file does, conventions to follow |
+| 🔧 [Skill Development](docs/SKILL-DEVELOPMENT.md) | How to create, structure, and maintain custom skills — includes template and checklist |
 
 ---
 
 ## 📁 File Overview
 
-| File                    | Description                                                          |
-| ----------------------- | -------------------------------------------------------------------- |
-| `docker-compose.yaml` | 🐳 Defines the gateway and CLI services with security hardening      |
-| `Dockerfile`          | 📦 Extends the official OpenClaw image with Chromium browser support |
-| `.env.example`        | 🔑 Template for environment variables                                |
-| `setup.sh`            | 🚀 Automated setup script with security auditing (run once)          |
-| `personalize.sh`      | 🎨 Agent personalization wizard (run after setup)                     |
-| `.dockerignore`       | 🚫 Prevents secrets from leaking into the Docker build               |
-| `docs/`               | 📖 Additional guides (SearXNG setup, security policy, personalization) |
+| File                   | Description                                                                          |
+| ---------------------- | ------------------------------------------------------------------------------------ |
+| `docker-compose.yaml`  | 🐳 Defines the gateway and CLI services with security hardening                      |
+| `Dockerfile`           | 📦 Extends the official OpenClaw image with Chromium, audio tools and browser support |
+| `scripts/`             | 🎙 STT and TTS scripts (baked into the Docker image at build time)                    |
+| `.env.example`         | 🔑 Template for environment variables                                                |
+| `setup.sh`             | 🚀 Automated setup script with security auditing (run once)                          |
+| `personalize.sh`       | 🎨 Agent personalization wizard (run after setup)                                    |
+| `agents.sh`            | 🎭 Agent persona manager (init, list, add, remove personas)                         |
+| `.dockerignore`        | 🚫 Prevents secrets from leaking into the Docker build                               |
+| `templates/agents/`    | 🎭 Agent persona templates (developer, assistant, marketeer, blank)                  |
+| `templates/skills/`    | 🧩 Skill templates and examples (weather, audio, blank template)                     |
+| `docs/`                | 📖 Guides: workspace architecture, skill development, security, personalization, SearXNG |
 
 ---
 
@@ -1170,9 +1183,15 @@ All persistent data is stored in the `./data/` directory:
 
 ```
 data/
-├── config/       # OpenClaw configuration, API keys, memory
-├── config-cli/   # Minimal config for the CLI container (auto-created by setup.sh)
-└── workspace/    # Files created by the AI assistant
+├── config/          # OpenClaw configuration, API keys, memory
+├── config-cli/      # Minimal config for the CLI container (auto-created by setup.sh)
+└── workspace/       # Agent workspace
+    ├── skills/      # Custom skills (SKILL.md + scripts per skill)
+    ├── secrets/     # Credentials per skill (.env files, never committed)
+    ├── memory/      # Daily session logs (YYYY-MM-DD.md)
+    ├── files/       # Reference library (PDFs, exports)
+    ├── docs/        # Large docs (loaded on request only)
+    └── tmp/         # Working files, intermediate results
 ```
 
 **To back up your instance**, simply copy the entire `data/` directory:
