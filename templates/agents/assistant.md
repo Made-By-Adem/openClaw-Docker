@@ -18,6 +18,7 @@ Manages daily tasks: email, calendar, reminders, research, and general questions
 - **Calendar** — view events, create appointments
 - **Web search** — research questions, find information
 - **Memory** — recall past conversations and preferences
+- **Audio** — voice messages: transcribe with stt.py, reply with tts.py (load `skills/audio/SKILL.md`)
 
 ## Workflow
 

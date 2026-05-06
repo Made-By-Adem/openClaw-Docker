@@ -72,7 +72,7 @@ Everything else is standard OpenClaw — no custom code.
 | [Skill Development](docs/SKILL-DEVELOPMENT.md) | How to create, structure, and maintain custom skills |
 | [Personalization](docs/PERSONALIZATION.md) | Quick reference for the personalization script and workspace files |
 | [Multi-Agent Guide](docs/AGENTS-GUIDE.md) | Give your agent specialized roles — it switches between developer, assistant, marketeer (or custom) based on what you ask |
-| [AI CLI Setup](docs/AI-CLI-SETUP.md) | Use Claude CLI or Gemini CLI to authenticate — no API key needed |
+| [CLI Setup](docs/AI-CLI-SETUP.md) | Set up Claude CLI, Gemini CLI, and GitHub CLI — authenticate without API keys, push code to GitHub |
 | [Security](docs/SECURITY.md) | Security hardening details, container isolation, recommended practices |
 | [SearXNG Setup](docs/SEARXNG-SETUP.md) | Add private self-hosted web search with optional Tor support |
 
@@ -1127,7 +1127,7 @@ Instead of entering an API key during onboarding, you can authenticate using the
 
 During onboarding, select your provider and choose **"Reuse a local CLI login"** as the auth method.
 
-> Both CLI tools are included in the Docker image by default. You only need to authenticate once — see [AI CLI Setup](docs/AI-CLI-SETUP.md) for step-by-step instructions.
+> All CLI tools are included in the Docker image by default. You only need to authenticate once — see [CLI Setup](docs/AI-CLI-SETUP.md) for step-by-step instructions.
 
 </details>
 
@@ -1170,7 +1170,7 @@ Optional guides for extending your OpenClaw instance with additional services:
 
 | Add-on | Description |
 | --- | --- |
-| 🔑 [AI CLI Setup](docs/AI-CLI-SETUP.md) | Use Claude CLI or Gemini CLI to authenticate — no API key needed |
+| 🔑 [CLI Setup](docs/AI-CLI-SETUP.md) | Set up Claude CLI, Gemini CLI, and GitHub CLI — authenticate without API keys, push code to GitHub |
 | 🔎 [SearXNG Setup](docs/SEARXNG-SETUP.md) | Add private, self-hosted web search (70+ engines including Google, Bing, DuckDuckGo) with optional darkweb search via Tor |
 | 🎙️ [Voice & Audio](templates/skills/audio/SKILL.md) | How voice messages work — local STT (faster-whisper) and TTS (edge-tts), voice selection, customization |
 | 🎭 [Multi-Agent Guide](docs/AGENTS-GUIDE.md) | Give your agent specialized roles that activate automatically — better output, consistent behavior, less repetition |

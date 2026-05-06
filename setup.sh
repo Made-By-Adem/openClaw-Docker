@@ -33,9 +33,24 @@ mkdir -p ./data/workspace/files
 mkdir -p ./data/workspace/tmp
 mkdir -p ./data/workspace/docs
 
-# AI CLI auth directories (persist login sessions across container restarts)
+# AI CLI and developer tool directories (persist sessions across container restarts)
 mkdir -p ./data/claude-cli
 mkdir -p ./data/gemini-cli
+mkdir -p ./data/github-cli
+mkdir -p ./data/projects
+touch ./data/gitconfig
+
+# Install default skill templates (audio TTS/STT, etc.)
+if [ -d "./templates/skills" ]; then
+  for skill_dir in ./templates/skills/*/; do
+    skill_name="$(basename "$skill_dir")"
+    [ "$skill_name" = "_template" ] && continue
+    if [ ! -d "./data/workspace/skills/$skill_name" ]; then
+      cp -r "$skill_dir" "./data/workspace/skills/$skill_name"
+      echo "[OK] Installed skill: $skill_name"
+    fi
+  done
+fi
 
 # Protect secrets directory — ensure .env files are never committed
 if [ ! -f "./data/workspace/secrets/.gitignore" ]; then

@@ -521,20 +521,24 @@ cat > "$WORKSPACE_DIR/AGENTS.md" << 'AGENTS_EOF'
 
 ## Skill Routing
 
-<!-- CUSTOMIZE: Add your skills below. Per skill: trigger words, action, twijfel-regel. -->
-<!-- Example:
 | Trigger | Skill | Action |
 |---------|-------|--------|
+| voice message, audio file | Audio | Load `skills/audio/SKILL.md`, transcribe with stt.py, reply with tts.py |
+
+<!-- CUSTOMIZE: Add more skills below. Per skill: trigger words, action, twijfel-regel. -->
+<!-- Example:
 | "licht", "lamp", "thermostat", "sensor", home automation keywords | Home Assistant | Load `skills/ha/SKILL.md`, authenticate, execute |
 | "email", "inbox", "mail", "stuur bericht" | Gmail | Load `skills/gmail/SKILL.md`, authenticate |
-| voice message received | Audio | Use stt.py to transcribe, reply with tts.py |
 
 **When in doubt:** better to load one skill too many than too late.
 -->
 
 ## Audio & Media
 
-- Audio in → audio out (always), unless explicit transcription requested
+- **Audio in → audio out (always)**, unless explicit transcription requested
+- When you receive a voice message: transcribe with `stt.py`, process the text, reply with `tts.py`
+- TTS and STT run locally (edge-tts + faster-whisper) — no external APIs, no costs
+- Load `skills/audio/SKILL.md` for commands, voices, and language options
 - Images → analyze, apply relevant skill (screenshot of error → support skill)
 
 ## Memory
@@ -606,13 +610,14 @@ while true; do
 ## Skill Routing
 | Trigger | Skill | Action |
 |---------|-------|--------|
+| voice message, audio file | Audio | Load skills/audio/SKILL.md, transcribe with stt.py, reply with tts.py |
 | \"licht\", \"lamp\", \"thermostat\" | Home Assistant | Load skills/ha/SKILL.md |
 | \"email\", \"inbox\", \"mail\" | Gmail | Load skills/gmail/SKILL.md |
-| voice message received | Audio | Transcribe with stt.py |
 
 ## Audio & Media
 - Audio in → audio out (always)
-- Images → analyze, apply relevant skill
+- TTS and STT run locally — no external APIs, no costs
+- Load skills/audio/SKILL.md for commands and voices
 
 ## Memory
 - Daily notes (memory/YYYY-MM-DD.md) — load yourself

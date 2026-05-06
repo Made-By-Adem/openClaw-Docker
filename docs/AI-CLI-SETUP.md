@@ -1,45 +1,56 @@
-# AI CLI Setup — Authenticate Without an API Key
+# CLI Setup — Claude, Gemini & GitHub
 
-Instead of entering an API key during onboarding, you can authenticate using the **Claude Code CLI** (Anthropic) or **Gemini CLI** (Google). The CLI tools reuse your existing login session, so you don't need to create or manage separate API keys.
+This Docker image includes three CLI tools out of the box. Each needs a one-time login — after that, sessions are persisted in mounted volumes and survive container restarts.
 
-> **When to use this:** You already have a Claude or Gemini account and want to skip API key management. During onboarding, you select your provider and choose **"Reuse a local CLI login"** as the auth method (see screenshot below).
-
----
-
-## Supported CLIs
-
-| CLI | Provider | Models | npm Package |
-| --- | --- | --- | --- |
-| Claude Code CLI | Anthropic | `anthropic/claude-opus-4-5`, `anthropic/claude-sonnet-4-5`, `anthropic/claude-haiku-4-5` | `@anthropic-ai/claude-code` |
-| Gemini CLI | Google | `google/gemini-2.5-pro`, `google/gemini-2.5-flash`, etc. | `@google/gemini-cli` |
+| CLI | Purpose | Login persisted in |
+| --- | --- | --- |
+| **Claude Code CLI** | Anthropic model auth (no API key needed) | `./data/claude-cli/` |
+| **Gemini CLI** | Google model auth (no API key needed) | `./data/gemini-cli/` |
+| **GitHub CLI** (`gh`) | Push code, create PRs, manage repos | `./data/github-cli/` |
 
 ---
 
-## Step 1 — Authenticate with Claude Code CLI
+## 1. Claude Code CLI (Anthropic)
 
-Both CLI tools are included in the Docker image by default. No extra build flags needed.
+Allows OpenClaw to use Claude models without an API key — select **"Reuse a local CLI login"** during onboarding.
 
-Run the Claude CLI inside the container to start the login flow:
+### Login
 
 ```bash
-docker compose exec openclaw-gateway claude auth login
+docker compose exec openclaw-gateway claude
 ```
 
-This opens a browser-based authentication flow. Follow the prompts to log in with your Anthropic account.
+Claude Code starts interactively. Follow the prompts:
 
-> **Headless server?** If you don't have a browser on the server, the CLI will print a URL. Open it on any device, complete the login, and paste the code back into the terminal.
+1. You get a URL and a one-time code
+2. Open the URL in any browser (phone, laptop — doesn't have to be on the server)
+3. Paste the code and confirm
+4. Back in the terminal, Claude Code confirms the login
+5. Exit with `/exit` or `Ctrl+C`
 
-Verify the login:
+### Verify
 
 ```bash
-docker compose exec openclaw-gateway claude auth status
+docker compose exec openclaw-gateway claude --version
 ```
+
+### Use in OpenClaw
+
+During onboarding or reconfiguration:
+
+```bash
+docker compose exec openclaw-gateway node dist/index.js configure
+```
+
+Navigate to **Model → Anthropic → Anthropic Claude CLI**.
 
 ---
 
-## Step 2 — Authenticate with Gemini CLI
+## 2. Gemini CLI (Google)
 
-Run the Gemini CLI inside the container:
+Allows OpenClaw to use Gemini models without an API key.
+
+### Login
 
 ```bash
 docker compose exec openclaw-gateway gemini auth login
@@ -47,27 +58,87 @@ docker compose exec openclaw-gateway gemini auth login
 
 Follow the browser-based login flow to authenticate with your Google account.
 
-Verify the login:
+### Verify
 
 ```bash
 docker compose exec openclaw-gateway gemini auth status
 ```
 
+### Use in OpenClaw
+
+During onboarding or reconfiguration, navigate to **Model → Google → Gemini CLI**.
+
 ---
 
-## Step 3 — Select CLI auth during onboarding or configuration
+## 3. GitHub CLI (`gh`)
+
+Allows the developer agent to clone repos, push code, and create PRs.
+
+### Login
+
+```bash
+docker compose exec openclaw-gateway gh auth login
+```
+
+You'll be asked:
+
+1. **Account:** GitHub.com
+2. **Protocol:** HTTPS
+3. **Authenticate:** Login with a web browser
+
+You'll get a one-time code and a URL. Open the URL on any device, paste the code, and authorize.
+
+**Alternative — token-based (headless servers):**
+
+Create a Personal Access Token at [github.com/settings/tokens](https://github.com/settings/tokens) with scopes `repo` and `workflow`, then:
+
+```bash
+docker compose exec openclaw-gateway gh auth login --with-token <<< "ghp_your_token_here"
+```
+
+### Configure git
+
+```bash
+docker compose exec openclaw-gateway git config --global user.name "Your Name"
+docker compose exec openclaw-gateway git config --global user.email "you@example.com"
+```
+
+Git config is persisted in `./data/gitconfig`.
+
+### Verify
+
+```bash
+docker compose exec openclaw-gateway gh auth status
+docker compose exec openclaw-gateway git config --global --list
+```
+
+### Working with projects
+
+Projects live in `./data/projects/` on the host (mounted at `~/projects/` in the container).
+
+```bash
+# Clone a repo via the container
+docker compose exec openclaw-gateway sh -c "cd ~/projects && gh repo clone owner/repo"
+
+# Or copy an existing project from the host
+cp -r /path/to/my-project ./data/projects/
+```
+
+The developer agent automatically works in `~/projects/` — it will create branches, commit, and push via `gh`.
+
+---
+
+## Select CLI auth during onboarding
 
 ### New installation
 
 During the onboarding wizard, when asked for your AI provider:
 
 1. Select your provider (e.g. **Anthropic** or **Google**)
-2. Choose **"Reuse a local CLI login"** (or **"Anthropic Claude CLI"** / **"Gemini CLI"**) as the auth method
-3. The wizard will verify the CLI login and proceed
+2. Choose **"Reuse a local CLI login"** as the auth method
+3. The wizard verifies the CLI login and proceeds
 
 ### Existing installation
-
-Re-run the configuration wizard:
 
 ```bash
 docker compose exec openclaw-gateway node dist/index.js configure
@@ -77,21 +148,9 @@ Navigate to the model/auth settings and switch to CLI-based authentication.
 
 ---
 
-## How it works
+## Using multiple providers
 
-When you select CLI auth, OpenClaw delegates authentication to the installed CLI tool instead of using a raw API key. The CLI manages token refresh and session persistence automatically.
-
-```
-User message → OpenClaw gateway → CLI auth layer → Provider API (Anthropic/Google)
-```
-
-**Auth persistence:** The CLI login sessions are stored in mounted volumes (`./data/claude-cli/` and `./data/gemini-cli/`), so they persist across container restarts. You only need to authenticate once.
-
----
-
-## Using both providers
-
-You can install and authenticate with both CLIs simultaneously. Configure OpenClaw to use one as the primary model and the other as a fallback:
+You can authenticate with both Claude CLI and Gemini CLI. Configure your preferred model in `./data/config/openclaw.json`:
 
 ```json
 {
@@ -103,15 +162,15 @@ You can install and authenticate with both CLIs simultaneously. Configure OpenCl
 }
 ```
 
-Switch between providers by changing the model in `./data/config/openclaw.json` or via the configuration wizard.
+Switch between providers via the configuration wizard or by editing the file directly.
 
 ---
 
 ## Troubleshooting
 
-### "Command not found: claude" or "Command not found: gemini"
+### "Command not found: claude", "gemini", or "gh"
 
-The Docker image may be outdated. Rebuild it:
+The Docker image may be outdated. Rebuild:
 
 ```bash
 docker compose build --no-cache
@@ -120,33 +179,34 @@ docker compose down && docker compose up -d
 
 ### "Not authenticated" during onboarding
 
-Run the CLI auth command first (Step 1 or 2 above), then re-run onboarding or configure.
+Run the CLI login first (sections 1, 2, or 3 above), then re-run onboarding or configure.
 
 ### Auth session expired
 
-Re-run the login command:
+Re-run the login command for the affected CLI:
 
 ```bash
-# Claude
-docker compose exec openclaw-gateway claude auth login
-
-# Gemini
-docker compose exec openclaw-gateway gemini auth login
+docker compose exec openclaw-gateway claude          # Claude
+docker compose exec openclaw-gateway gemini auth login  # Gemini
+docker compose exec openclaw-gateway gh auth login      # GitHub
 ```
 
 ### Permission errors on auth directories
 
-The CLI auth directories must be owned by uid 1000 (the `node` user inside the container):
+The directories must be owned by uid 1000 (the `node` user inside the container):
 
 ```bash
-sudo chown -R 1000:1000 ./data/claude-cli ./data/gemini-cli
+sudo chown -R 1000:1000 ./data/claude-cli ./data/gemini-cli ./data/github-cli ./data/projects
 ```
 
 ---
 
 ## Security notes
 
-- CLI auth tokens are stored in `./data/claude-cli/` and `./data/gemini-cli/`. Treat these directories like API keys — restrict access and never commit them to git.
-- The `.dockerignore` file already excludes `data/` from the Docker build context.
-- Rotate CLI sessions periodically by re-running the login commands.
-- If you suspect a session is compromised, revoke it from your provider's account settings ([Anthropic Console](https://console.anthropic.com/), [Google Account](https://myaccount.google.com/permissions)) and re-authenticate.
+- Auth sessions are stored in `./data/claude-cli/`, `./data/gemini-cli/`, and `./data/github-cli/`. Treat these like credentials — restrict access and never commit to git.
+- The `.dockerignore` file excludes `data/` from the Docker build context.
+- Rotate sessions periodically by re-running the login commands.
+- To revoke a compromised session:
+  - Claude: [Anthropic Console](https://console.anthropic.com/)
+  - Gemini: [Google Account Permissions](https://myaccount.google.com/permissions)
+  - GitHub: [GitHub Settings > Applications](https://github.com/settings/applications)

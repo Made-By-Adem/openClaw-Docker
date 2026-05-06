@@ -2,8 +2,6 @@ services:
   openclaw-gateway:
     build:
       context: .
-      args:
-        INSTALL_DEV_TOOLS: ${INSTALL_DEV_TOOLS:-false}
     image: openclaw-custom
     container_name: openclaw-gateway
     environment:
@@ -19,13 +17,16 @@ services:
       - ${OPENCLAW_WORKSPACE_DIR:-./data/workspace}:/home/node/.openclaw/workspace
       - ./data/claude-cli:/home/node/.claude
       - ./data/gemini-cli:/home/node/.gemini
+      - ./data/github-cli:/home/node/.config/gh
+      - ./data/gitconfig:/home/node/.gitconfig
+      - ./data/projects:/home/node/projects
     shm_size: '2gb'
     ports:
       - "18789:18789"   # Gateway API
       - "18790:18790"   # Dashboard UI
     init: true
     restart: unless-stopped
-    read_only: true
+    read_only: false
     tmpfs:
       - /tmp:size=1g
       - /home/node/.openclaw/browser:size=512m
