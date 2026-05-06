@@ -52,17 +52,31 @@ Allows OpenClaw to use Gemini models without an API key.
 
 ### Login
 
+The Gemini CLI has no `auth` subcommand — auth happens on first interactive launch.
+
 ```bash
-docker compose exec openclaw-gateway gemini auth login
+docker compose exec -it openclaw-gateway gemini
 ```
 
-Follow the browser-based login flow to authenticate with your Google account.
+On first run you get an auth picker:
+
+1. Choose **"Login with Google"**
+2. A URL + one-time code is printed
+3. Open the URL in any browser, paste the code, approve
+4. The REPL confirms you're authenticated
+5. Exit with `/quit` (or `Ctrl+C`)
+
+Credentials are stored in `~/.gemini/` inside the container, persisted via the `./data/gemini-cli` volume.
 
 ### Verify
 
+Re-launch the REPL — if it skips the auth picker and goes straight to the prompt, you're logged in:
+
 ```bash
-docker compose exec openclaw-gateway gemini auth status
+docker compose exec -it openclaw-gateway gemini
 ```
+
+To switch auth method later, type `/auth` from inside the REPL.
 
 ### Use in OpenClaw
 
@@ -114,17 +128,17 @@ docker compose exec openclaw-gateway git config --global --list
 
 ### Working with projects
 
-Projects live in `./data/projects/` on the host (mounted at `~/projects/` in the container).
+Projects live in `./data/workspace/projects/` on the host (mounted at `~/.openclaw/workspace/projects/` in the container, alongside the rest of the workspace).
 
 ```bash
 # Clone a repo via the container
-docker compose exec openclaw-gateway sh -c "cd ~/projects && gh repo clone owner/repo"
+docker compose exec openclaw-gateway sh -c "cd ~/.openclaw/workspace/projects && gh repo clone owner/repo"
 
 # Or copy an existing project from the host
-cp -r /path/to/my-project ./data/projects/
+cp -r /path/to/my-project ./data/workspace/projects/
 ```
 
-The developer agent automatically works in `~/projects/` — it will create branches, commit, and push via `gh`.
+The developer agent automatically works in `~/.openclaw/workspace/projects/` — it will create branches, commit, and push via `gh`.
 
 ---
 
@@ -186,9 +200,9 @@ Run the CLI login first (sections 1, 2, or 3 above), then re-run onboarding or c
 Re-run the login command for the affected CLI:
 
 ```bash
-docker compose exec openclaw-gateway claude          # Claude
-docker compose exec openclaw-gateway gemini auth login  # Gemini
-docker compose exec openclaw-gateway gh auth login      # GitHub
+docker compose exec -it openclaw-gateway claude     # Claude
+docker compose exec -it openclaw-gateway gemini     # Gemini (re-runs auth picker if session expired)
+docker compose exec openclaw-gateway gh auth login  # GitHub
 ```
 
 ### Permission errors on auth directories
@@ -196,7 +210,7 @@ docker compose exec openclaw-gateway gh auth login      # GitHub
 The directories must be owned by uid 1000 (the `node` user inside the container):
 
 ```bash
-sudo chown -R 1000:1000 ./data/claude-cli ./data/gemini-cli ./data/github-cli ./data/projects
+sudo chown -R 1000:1000 ./data/claude-cli ./data/gemini-cli ./data/github-cli ./data/workspace/projects
 ```
 
 ---
