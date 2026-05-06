@@ -33,6 +33,10 @@ mkdir -p ./data/workspace/files
 mkdir -p ./data/workspace/tmp
 mkdir -p ./data/workspace/docs
 
+# AI CLI auth directories (persist login sessions across container restarts)
+mkdir -p ./data/claude-cli
+mkdir -p ./data/gemini-cli
+
 # Protect secrets directory — ensure .env files are never committed
 if [ ! -f "./data/workspace/secrets/.gitignore" ]; then
   printf '# Never commit secrets\n*.env\n!.gitignore\n' > ./data/workspace/secrets/.gitignore

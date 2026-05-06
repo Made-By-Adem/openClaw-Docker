@@ -3,6 +3,7 @@ services:
     build:
       context: .
       args:
+        INSTALL_AI_CLI: ${INSTALL_AI_CLI:-false}
         INSTALL_DEV_TOOLS: ${INSTALL_DEV_TOOLS:-false}
     image: openclaw-custom
     container_name: openclaw-gateway
@@ -17,6 +18,8 @@ services:
     volumes:
       - ${OPENCLAW_CONFIG_DIR:-./data/config}:/home/node/.openclaw
       - ${OPENCLAW_WORKSPACE_DIR:-./data/workspace}:/home/node/.openclaw/workspace
+      - ./data/claude-cli:/home/node/.claude
+      - ./data/gemini-cli:/home/node/.gemini
     shm_size: '2gb'
     ports:
       - "18789:18789"   # Gateway API

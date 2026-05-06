@@ -72,6 +72,7 @@ Everything else is standard OpenClaw — no custom code.
 | [Skill Development](docs/SKILL-DEVELOPMENT.md) | How to create, structure, and maintain custom skills |
 | [Personalization](docs/PERSONALIZATION.md) | Quick reference for the personalization script and workspace files |
 | [Multi-Agent Guide](docs/AGENTS-GUIDE.md) | Give your agent specialized roles — it switches between developer, assistant, marketeer (or custom) based on what you ask |
+| [AI CLI Setup](docs/AI-CLI-SETUP.md) | Use Claude CLI or Gemini CLI to authenticate — no API key needed |
 | [Security](docs/SECURITY.md) | Security hardening details, container isolation, recommended practices |
 | [SearXNG Setup](docs/SEARXNG-SETUP.md) | Add private self-hosted web search with optional Tor support |
 
@@ -81,11 +82,11 @@ Everything else is standard OpenClaw — no custom code.
 
 Before you start, make sure you have:
 
-| # | Requirement                          | Details                                                                   |
-| - | ------------------------------------ | ------------------------------------------------------------------------- |
-| 1 | **Linux server**               | Ubuntu recommended, Raspberry Pi also works                               |
-| 2 | **Docker Engine + Compose v2** | [Install Docker](https://docs.docker.com/engine/install/)                    |
-| 3 | **AI provider API key**        | Any OpenAI-compatible provider (OpenAI, Anthropic, Google, Mistral, etc.) |
+| # | Requirement | Details |
+| - | - | - |
+| 1 | **Linux server** | Ubuntu recommended, Raspberry Pi also works |
+| 2 | **Docker Engine + Compose v2** | [Install Docker](https://docs.docker.com/engine/install/) |
+| 3 | **AI provider API key or CLI** | API key for any provider, or use [Claude CLI / Gemini CLI](docs/AI-CLI-SETUP.md) to authenticate without a key |
 
 <details>
 <summary>📥 <strong>Installing Docker (if you don't have it yet)</strong></summary>
@@ -1113,6 +1114,24 @@ You can configure OpenClaw to prioritize Claude Code CLI for code-related skills
 </details>
 
 <details>
+<summary>🔑 <strong>Authenticate via CLI (no API key needed)</strong></summary>
+
+Instead of entering an API key during onboarding, you can authenticate using the **Claude Code CLI** (Anthropic) or **Gemini CLI** (Google). The CLI tools reuse your existing login session — no need to create or manage API keys.
+
+**Supported CLIs:**
+
+| CLI | Provider | Package |
+| --- | --- | --- |
+| Claude Code CLI | Anthropic (Claude models) | `@anthropic-ai/claude-code` |
+| Gemini CLI | Google (Gemini models) | `@google/gemini-cli` |
+
+During onboarding, select your provider and choose **"Reuse a local CLI login"** as the auth method.
+
+> **Setup required.** The CLI tools must be installed in the Docker image and authenticated before you can use this method. See [AI CLI Setup](docs/AI-CLI-SETUP.md) for step-by-step instructions.
+
+</details>
+
+<details>
 <summary>🔓 <strong>OpenAI OAuth (use your paid subscription instead of API credits)</strong></summary>
 
 If you have a paid OpenAI account (ChatGPT Plus, Pro, or Team), you can connect via **OAuth** instead of an API key. This means usage is deducted from your subscription allowance rather than billed separately through the API — which can be significantly cheaper or even free depending on your plan.
@@ -1151,6 +1170,7 @@ Optional guides for extending your OpenClaw instance with additional services:
 
 | Add-on | Description |
 | --- | --- |
+| 🔑 [AI CLI Setup](docs/AI-CLI-SETUP.md) | Use Claude CLI or Gemini CLI to authenticate — no API key needed |
 | 🔎 [SearXNG Setup](docs/SEARXNG-SETUP.md) | Add private, self-hosted web search (70+ engines including Google, Bing, DuckDuckGo) with optional darkweb search via Tor |
 | 🎙️ [Voice & Audio](templates/skills/audio/SKILL.md) | How voice messages work — local STT (faster-whisper) and TTS (edge-tts), voice selection, customization |
 | 🎭 [Multi-Agent Guide](docs/AGENTS-GUIDE.md) | Give your agent specialized roles that activate automatically — better output, consistent behavior, less repetition |
