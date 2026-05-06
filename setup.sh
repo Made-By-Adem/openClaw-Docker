@@ -37,7 +37,7 @@ mkdir -p ./data/workspace/docs
 mkdir -p ./data/claude-cli
 mkdir -p ./data/gemini-cli
 mkdir -p ./data/github-cli
-mkdir -p ./data/projects
+mkdir -p ./data/workspace/projects
 touch ./data/gitconfig
 
 # Install default skill templates (audio TTS/STT, etc.)

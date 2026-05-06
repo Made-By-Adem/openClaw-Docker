@@ -19,7 +19,6 @@ services:
       - ./data/gemini-cli:/home/node/.gemini
       - ./data/github-cli:/home/node/.config/gh
       - ./data/gitconfig:/home/node/.gitconfig
-      - ./data/projects:/home/node/projects
     shm_size: '2gb'
     ports:
       - "18789:18789"   # Gateway API

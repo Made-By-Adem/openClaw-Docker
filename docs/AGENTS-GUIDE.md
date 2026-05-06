@@ -132,7 +132,7 @@ When the agent receives a message:
 
 The developer persona uses git, GitHub CLI (`gh`), and Claude Code CLI for coding tasks. All tools are installed in the Docker image by default.
 
-Projects live in `./data/projects/` on the host, mounted at `~/projects/` inside the container. You can place project folders there manually or let the agent clone repos.
+Projects live in `./data/workspace/projects/` on the host, mounted at `~/.openclaw/workspace/projects/` inside the container. You can place project folders there manually or let the agent clone repos.
 
 ### 1. Configure git
 
@@ -158,17 +158,17 @@ docker compose exec openclaw-gateway gh auth status
 
 ### 3. Add projects
 
-Place existing project folders in `./data/projects/`, or let the agent clone them:
+Place existing project folders in `./data/workspace/projects/`, or let the agent clone them:
 
 ```bash
 # From the host
-cp -r /path/to/my-project ./data/projects/
+cp -r /path/to/my-project ./data/workspace/projects/
 
 # Or let the agent clone inside the container
-docker compose exec openclaw-gateway sh -c "cd ~/projects && gh repo clone owner/repo"
+docker compose exec openclaw-gateway sh -c "cd ~/.openclaw/workspace/projects && gh repo clone owner/repo"
 ```
 
-The agent will work in `~/projects/<project-name>/`, create branches, commit, and push via `gh`.
+The agent will work in `~/.openclaw/workspace/projects/<project-name>/`, create branches, commit, and push via `gh`.
 
 ## Voice & Audio Handling
 
