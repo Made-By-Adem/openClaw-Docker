@@ -15,35 +15,9 @@ Instead of entering an API key during onboarding, you can authenticate using the
 
 ---
 
-## Step 1 — Enable AI CLI in the Docker image
+## Step 1 — Authenticate with Claude Code CLI
 
-The CLI tools are not installed by default. Enable them by setting `INSTALL_AI_CLI=true` in your `.env` file before building.
-
-**New installation (before running `setup.sh`):**
-
-```bash
-# Edit .env.example or create .env
-echo "INSTALL_AI_CLI=true" >> .env
-```
-
-Then run `setup.sh` as normal — it will build the image with the CLI tools included.
-
-**Existing installation:**
-
-```bash
-# 1. Add the flag to your .env
-echo "INSTALL_AI_CLI=true" >> .env
-
-# 2. Rebuild the Docker image
-docker compose build --no-cache
-
-# 3. Restart
-docker compose down && docker compose up -d
-```
-
----
-
-## Step 2 — Authenticate with Claude Code CLI
+Both CLI tools are included in the Docker image by default. No extra build flags needed.
 
 Run the Claude CLI inside the container to start the login flow:
 
@@ -63,7 +37,7 @@ docker compose exec openclaw-gateway claude auth status
 
 ---
 
-## Step 3 — Authenticate with Gemini CLI
+## Step 2 — Authenticate with Gemini CLI
 
 Run the Gemini CLI inside the container:
 
@@ -81,7 +55,7 @@ docker compose exec openclaw-gateway gemini auth status
 
 ---
 
-## Step 4 — Select CLI auth during onboarding or configuration
+## Step 3 — Select CLI auth during onboarding or configuration
 
 ### New installation
 
@@ -137,7 +111,7 @@ Switch between providers by changing the model in `./data/config/openclaw.json` 
 
 ### "Command not found: claude" or "Command not found: gemini"
 
-The CLI tools are not installed. Make sure `INSTALL_AI_CLI=true` is set in your `.env` file and rebuild:
+The Docker image may be outdated. Rebuild it:
 
 ```bash
 docker compose build --no-cache
@@ -146,7 +120,7 @@ docker compose down && docker compose up -d
 
 ### "Not authenticated" during onboarding
 
-Run the CLI auth command first (Step 2 or 3 above), then re-run onboarding or configure.
+Run the CLI auth command first (Step 1 or 2 above), then re-run onboarding or configure.
 
 ### Auth session expired
 

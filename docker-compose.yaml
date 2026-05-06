@@ -3,7 +3,6 @@ services:
     build:
       context: .
       args:
-        INSTALL_AI_CLI: ${INSTALL_AI_CLI:-false}
         INSTALL_DEV_TOOLS: ${INSTALL_DEV_TOOLS:-false}
     image: openclaw-custom
     container_name: openclaw-gateway

@@ -1127,7 +1127,7 @@ Instead of entering an API key during onboarding, you can authenticate using the
 
 During onboarding, select your provider and choose **"Reuse a local CLI login"** as the auth method.
 
-> **Setup required.** The CLI tools must be installed in the Docker image and authenticated before you can use this method. See [AI CLI Setup](docs/AI-CLI-SETUP.md) for step-by-step instructions.
+> Both CLI tools are included in the Docker image by default. You only need to authenticate once — see [AI CLI Setup](docs/AI-CLI-SETUP.md) for step-by-step instructions.
 
 </details>
 

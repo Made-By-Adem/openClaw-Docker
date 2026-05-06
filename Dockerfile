@@ -41,14 +41,9 @@ RUN apt-get update \
        libsndfile1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Optional: AI CLI tools for provider authentication
-# Installs Claude Code CLI and Gemini CLI so you can use "Reuse local CLI login"
-# during onboarding instead of entering an API key.
-# Build with: docker compose build --build-arg INSTALL_AI_CLI=true
-ARG INSTALL_AI_CLI=false
-RUN if [ "$INSTALL_AI_CLI" = "true" ]; then \
-      npm install -g @anthropic-ai/claude-code @google/gemini-cli; \
-    fi
+# AI CLI tools for provider authentication
+# Allows "Reuse local CLI login" during onboarding instead of entering an API key
+RUN npm install -g @anthropic-ai/claude-code @google/gemini-cli
 
 # Optional: Developer tools for the developer agent persona
 # Build with: docker compose build --build-arg INSTALL_DEV_TOOLS=true
