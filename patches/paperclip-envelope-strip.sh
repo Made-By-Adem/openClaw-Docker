@@ -37,6 +37,17 @@ patched=0
 skipped=0
 untouched=0
 
+verify_callsite_injection() {
+  local file="$1"
+  local validator="$2"
+
+  perl -0ne '
+    my ($validator) = @ARGV;
+    my $re = qr{if\s*\(\s*([A-Za-z_\$][A-Za-z0-9_\$]*)\s*&&\s*typeof\s+\1\s*===\s*"object"\s*\)\s*\{\s*delete\s+\1\.paperclip;\s*\}\s*if\s*\(!\Q$validator\E\s*\(\s*\1\s*\)\)}ms;
+    exit(($ARGV =~ $re) ? 0 : 1);
+  ' "$validator" "$file"
+}
+
 for f in "$DIST_DIR"/*.js; do
   has_agent=0
   has_chat=0
@@ -51,8 +62,8 @@ for f in "$DIST_DIR"/*.js; do
 
   needs_agent=0
   needs_chat=0
-  if [ "$has_agent" = 1 ] && ! grep -Eq 'delete\s+[A-Za-z_$][A-Za-z0-9_$]*\.paperclip;' "$f"; then needs_agent=1; fi
-  if [ "$has_chat" = 1 ] && ! grep -Eq 'delete\s+[A-Za-z_$][A-Za-z0-9_$]*\.paperclip;' "$f"; then needs_chat=1; fi
+  if [ "$has_agent" = 1 ] && ! verify_callsite_injection "$f" 'validateAgentParams'; then needs_agent=1; fi
+  if [ "$has_chat" = 1 ] && ! verify_callsite_injection "$f" 'validateChatSendParams'; then needs_chat=1; fi
 
   if [ "$needs_agent" = 0 ] && [ "$needs_chat" = 0 ]; then
     echo "[paperclip-envelope-strip] $(basename "$f"): already patched"
@@ -68,11 +79,11 @@ for f in "$DIST_DIR"/*.js; do
   fi
 
   ok=1
-  if [ "$has_agent" = 1 ] && ! grep -Eq 'if\s*\(\s*[A-Za-z_$][A-Za-z0-9_$]*\s*&&\s*typeof\s+[A-Za-z_$][A-Za-z0-9_$]*\s*===\s*"object"\s*\)\s*\{\s*delete\s+[A-Za-z_$][A-Za-z0-9_$]*\.paperclip;\s*\}' "$f"; then
+  if [ "$has_agent" = 1 ] && ! verify_callsite_injection "$f" 'validateAgentParams'; then
     echo "[paperclip-envelope-strip] $(basename "$f"): agent validator found but injection missing" >&2
     ok=0
   fi
-  if [ "$has_chat" = 1 ] && ! grep -Eq 'if\s*\(\s*[A-Za-z_$][A-Za-z0-9_$]*\s*&&\s*typeof\s+[A-Za-z_$][A-Za-z0-9_$]*\s*===\s*"object"\s*\)\s*\{\s*delete\s+[A-Za-z_$][A-Za-z0-9_$]*\.paperclip;\s*\}' "$f"; then
+  if [ "$has_chat" = 1 ] && ! verify_callsite_injection "$f" 'validateChatSendParams'; then
     echo "[paperclip-envelope-strip] $(basename "$f"): chat validator found but injection missing" >&2
     ok=0
   fi
