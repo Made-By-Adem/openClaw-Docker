@@ -23,7 +23,7 @@
 # so we scan every `*.js` in `/app/dist` and patch wherever the call
 # site appears.
 
-set -uo pipefail
+set -euo pipefail
 
 DIST_DIR="${OPENCLAW_DIST_DIR:-/app/dist}"
 
@@ -40,8 +40,9 @@ untouched=0
 for f in "$DIST_DIR"/*.js; do
   has_agent=0
   has_chat=0
-  grep -qF 'validateAgentParams(p)' "$f" && has_agent=1
-  grep -qF 'validateChatSendParams(params)' "$f" && has_chat=1
+
+  grep -Eq 'validateAgentParams\s*\(\s*[A-Za-z_$][A-Za-z0-9_$]*\s*\)' "$f" && has_agent=1
+  grep -Eq 'validateChatSendParams\s*\(\s*[A-Za-z_$][A-Za-z0-9_$]*\s*\)' "$f" && has_chat=1
 
   if [ "$has_agent" = 0 ] && [ "$has_chat" = 0 ]; then
     untouched=$((untouched + 1))
@@ -60,15 +61,21 @@ for f in "$DIST_DIR"/*.js; do
   fi
 
   if [ "$needs_agent" = 1 ]; then
-    perl -i -pe 's{^(\s*)(if \(!validateAgentParams\(p\)\))}{${1}if (p && typeof p === "object") { delete p.paperclip; }\n${1}${2}}' "$f"
+    perl -0i -pe 's{^(\s*)(if\s*\(!validateAgentParams\s*\(\s*([A-Za-z_$][A-Za-z0-9_$]*)\s*\)\))}{${1}if ($3 && typeof $3 === "object") { delete $3.paperclip; }\n${1}${2}}mg' "$f"
   fi
   if [ "$needs_chat" = 1 ]; then
-    perl -i -pe 's{^(\s*)(if \(!validateChatSendParams\(params\)\))}{${1}if (params && typeof params === "object") { delete params.paperclip; }\n${1}${2}}' "$f"
+    perl -0i -pe 's{^(\s*)(if\s*\(!validateChatSendParams\s*\(\s*([A-Za-z_$][A-Za-z0-9_$]*)\s*\)\))}{${1}if ($3 && typeof $3 === "object") { delete $3.paperclip; }\n${1}${2}}mg' "$f"
   fi
 
   ok=1
-  if [ "$has_agent" = 1 ] && ! grep -qF 'delete p.paperclip' "$f"; then ok=0; fi
-  if [ "$has_chat" = 1 ] && ! grep -qF 'delete params.paperclip' "$f"; then ok=0; fi
+  if [ "$has_agent" = 1 ] && ! grep -Eq 'if\s*\(\s*[A-Za-z_$][A-Za-z0-9_$]*\s*&&\s*typeof\s+[A-Za-z_$][A-Za-z0-9_$]*\s*===\s*"object"\s*\)\s*\{\s*delete\s+[A-Za-z_$][A-Za-z0-9_$]*\.paperclip;\s*\}' "$f"; then
+    echo "[paperclip-envelope-strip] $(basename "$f"): agent validator found but injection missing" >&2
+    ok=0
+  fi
+  if [ "$has_chat" = 1 ] && ! grep -Eq 'if\s*\(\s*[A-Za-z_$][A-Za-z0-9_$]*\s*&&\s*typeof\s+[A-Za-z_$][A-Za-z0-9_$]*\s*===\s*"object"\s*\)\s*\{\s*delete\s+[A-Za-z_$][A-Za-z0-9_$]*\.paperclip;\s*\}' "$f"; then
+    echo "[paperclip-envelope-strip] $(basename "$f"): chat validator found but injection missing" >&2
+    ok=0
+  fi
   if [ "$ok" = 0 ]; then
     echo "[paperclip-envelope-strip] $(basename "$f"): patch verification failed" >&2
     exit 2
