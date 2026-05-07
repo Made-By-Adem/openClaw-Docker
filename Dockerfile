@@ -50,18 +50,21 @@ RUN apt-get update \
        tesseract-ocr \
        tesseract-ocr-nld \
        libsndfile1 \
+       # Developer tools
+       git \
+       openssh-client \
     && rm -rf /var/lib/apt/lists/*
 
-# Optional: Developer tools for the developer agent persona
-# Build with: docker compose build --build-arg INSTALL_DEV_TOOLS=true
-ARG INSTALL_DEV_TOOLS=false
-RUN if [ "$INSTALL_DEV_TOOLS" = "true" ]; then \
-      apt-get update && apt-get install -y --no-install-recommends \
-        git \
-        openssh-client \
-      && rm -rf /var/lib/apt/lists/* \
-      && npm install -g @anthropic-ai/claude-code; \
-    fi
+# GitHub CLI
+RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+      -o /usr/share/keyrings/githubcli-archive-keyring.gpg && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+      > /etc/apt/sources.list.d/github-cli.list && \
+    apt-get update && apt-get install -y --no-install-recommends gh && \
+    rm -rf /var/lib/apt/lists/*
+
+# AI CLI tools for provider authentication
+RUN npm install -g @anthropic-ai/claude-code @google/gemini-cli
 
 # Python packages for AI media processing (TTS, STT, image recognition)
 RUN python3 -m venv /opt/ai-tools && \

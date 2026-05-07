@@ -37,13 +37,16 @@ For vulnerabilities in the OpenClaw application itself, report them to the upstr
 
 ## 🛡️ Hardening Measures
 
-This Docker setup includes the following security measures:
+This Docker setup includes the following security measures, with some depending on which profile or authentication workflow you choose:
 
 ### Docker container hardening
 
+> [!WARNING]
+> If you enable in-container Claude CLI, Gemini CLI, or GitHub CLI authentication exactly as documented in `docs/AI-CLI-SETUP.md`, you may need `read_only: false` on the main gateway container for compatibility. That is a real reduction in hardening, not a cosmetic config change. Document it clearly in your deployment and only accept that tradeoff when CLI-based auth is more valuable than maximum container immutability.
+
 | Measure | Description |
 | --- | --- |
-| 🔏 **Read-only filesystem** | Prevents runtime modification of application files |
+| 🔏 **Read-only filesystem (strict mode)** | Prevents runtime modification of application files. The CLI-auth workflow documented in this repo may require `read_only: false` instead. |
 | 🚫 **All capabilities dropped** | `cap_drop: ALL` removes all Linux capabilities |
 | ⬆️ **No privilege escalation** | `no-new-privileges` prevents gaining permissions |
 | 📊 **Resource limits** | Memory, CPU, and PID caps prevent exhaustion and fork-bombs |

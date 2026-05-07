@@ -130,36 +130,69 @@ When the agent receives a message:
 
 ## Developer Agent Setup
 
-The developer persona can use Claude Code CLI and git for coding tasks. To enable this:
+The developer persona uses git, GitHub CLI (`gh`), and Claude Code CLI for coding tasks. All tools are installed in the Docker image by default.
 
-### 1. Build with dev tools
+Projects live in `./data/workspace/projects/` on the host, mounted at `~/.openclaw/workspace/projects/` inside the container. You can place project folders there manually or let the agent clone repos.
 
-```bash
-docker compose build --build-arg INSTALL_DEV_TOOLS=true
-```
-
-This installs `git`, `ssh-client`, and `gh` (GitHub CLI) in the container.
-
-### 2. Add credentials
-
-Add to your `.env` file:
-```bash
-GITHUB_TOKEN=ghp_your_token_here
-ANTHROPIC_API_KEY=sk-ant-your_key_here
-```
-
-And to `./data/config/.env`:
-```bash
-GITHUB_TOKEN=ghp_your_token_here
-ANTHROPIC_API_KEY=sk-ant-your_key_here
-```
-
-### 3. Configure git in the container
+### 1. Configure git
 
 ```bash
 docker compose exec openclaw-gateway git config --global user.name "Your Name"
 docker compose exec openclaw-gateway git config --global user.email "you@example.com"
 ```
+
+Your git config is persisted in `./data/gitconfig`.
+
+### 2. Authenticate with GitHub
+
+```bash
+docker compose exec openclaw-gateway gh auth login
+```
+
+Follow the interactive login flow. Your session is persisted in `./data/github-cli/`.
+
+Verify:
+```bash
+docker compose exec openclaw-gateway gh auth status
+```
+
+### 3. Add projects
+
+Place existing project folders in `./data/workspace/projects/`, or let the agent clone them:
+
+```bash
+# From the host
+cp -r /path/to/my-project ./data/workspace/projects/
+
+# Or let the agent clone inside the container
+docker compose exec openclaw-gateway sh -c "cd ~/.openclaw/workspace/projects && gh repo clone owner/repo"
+```
+
+The agent will work in `~/.openclaw/workspace/projects/<project-name>/`, create branches, commit, and push via `gh`.
+
+## Voice & Audio Handling
+
+All personas can handle voice messages using the built-in audio skill. The skill is installed automatically during setup at `skills/audio/SKILL.md`.
+
+**How it works:**
+
+1. User sends a voice message → OpenClaw saves the audio file
+2. The agent loads `skills/audio/SKILL.md` and transcribes with `stt.py` (faster-whisper, local)
+3. The agent processes the transcribed text as normal
+4. The agent replies with audio via `tts.py` (edge-tts, local) — **audio in → audio out**
+
+**Key commands:**
+```bash
+# Transcribe incoming voice
+python3 /opt/ai-tools/bin/stt.py <audio_file> --language nl
+
+# Reply with audio
+python3 /opt/ai-tools/bin/tts.py "antwoord tekst" /tmp/reply.mp3
+```
+
+No external APIs, no costs. Both STT and TTS run entirely inside the container.
+
+> **Important:** The audio skill routing must be active in `AGENTS.md` (not commented out) for this to work. The `personalize.sh` script configures this by default. If voice replies aren't working, check that `AGENTS.md` includes the audio skill in the routing table and that `skills/audio/SKILL.md` exists in the workspace.
 
 ## Workspace Structure with Personas
 
