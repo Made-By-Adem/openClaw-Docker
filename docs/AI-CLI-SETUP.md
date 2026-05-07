@@ -58,7 +58,7 @@ Allows OpenClaw to use Gemini models without an API key.
 The Gemini CLI has no `auth` subcommand — auth happens on first interactive launch.
 
 ```bash
-docker compose exec -it openclaw-gateway gemini
+docker compose exec openclaw-gateway gemini
 ```
 
 On first run you get an auth picker:
@@ -76,7 +76,7 @@ Credentials are stored in `~/.gemini/` inside the container, persisted via the `
 Re-launch the REPL — if it skips the auth picker and goes straight to the prompt, you're logged in:
 
 ```bash
-docker compose exec -it openclaw-gateway gemini
+docker compose exec openclaw-gateway gemini
 ```
 
 To switch auth method later, type `/auth` from inside the REPL.
@@ -110,7 +110,7 @@ You'll get a one-time code and a URL. Open the URL on any device, paste the code
 Create a Personal Access Token at [github.com/settings/tokens](https://github.com/settings/tokens) with scopes `repo` and `workflow`, then:
 
 ```bash
-docker compose exec openclaw-gateway gh auth login --with-token <<< "ghp_your_token_here"
+printf '%s\n' 'ghp_your_token_here' | docker compose exec -T openclaw-gateway gh auth login --with-token
 ```
 
 ### Configure git
@@ -203,8 +203,8 @@ Run the CLI login first (sections 1, 2, or 3 above), then re-run onboarding or c
 Re-run the login command for the affected CLI:
 
 ```bash
-docker compose exec -it openclaw-gateway claude     # Claude
-docker compose exec -it openclaw-gateway gemini     # Gemini (re-runs auth picker if session expired)
+docker compose exec openclaw-gateway claude     # Claude
+docker compose exec openclaw-gateway gemini     # Gemini (re-runs auth picker if session expired)
 docker compose exec openclaw-gateway gh auth login  # GitHub
 ```
 

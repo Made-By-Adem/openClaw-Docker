@@ -42,7 +42,9 @@ touch ./data/gitconfig
 
 # Install default skill templates (audio TTS/STT, etc.)
 if [ -d "./templates/skills" ]; then
+  shopt -s nullglob
   for skill_dir in ./templates/skills/*/; do
+    [ -d "$skill_dir" ] || continue
     skill_name="$(basename "$skill_dir")"
     [ "$skill_name" = "_template" ] && continue
     if [ ! -d "./data/workspace/skills/$skill_name" ]; then
@@ -50,6 +52,7 @@ if [ -d "./templates/skills" ]; then
       echo "[OK] Installed skill: $skill_name"
     fi
   done
+  shopt -u nullglob
 fi
 
 # Protect secrets directory — ensure .env files are never committed

@@ -37,7 +37,7 @@ For vulnerabilities in the OpenClaw application itself, report them to the upstr
 
 ## 🛡️ Hardening Measures
 
-This Docker setup includes the following security measures:
+This Docker setup includes the following security measures, with some depending on which profile or authentication workflow you choose:
 
 ### Docker container hardening
 
@@ -46,7 +46,7 @@ This Docker setup includes the following security measures:
 
 | Measure | Description |
 | --- | --- |
-| 🔏 **Read-only filesystem** | Prevents runtime modification of application files (note: CLI-auth workflows may require disabling this) |
+| 🔏 **Read-only filesystem (strict mode)** | Prevents runtime modification of application files. The CLI-auth workflow documented in this repo may require `read_only: false` instead. |
 | 🚫 **All capabilities dropped** | `cap_drop: ALL` removes all Linux capabilities |
 | ⬆️ **No privilege escalation** | `no-new-privileges` prevents gaining permissions |
 | 📊 **Resource limits** | Memory, CPU, and PID caps prevent exhaustion and fork-bombs |
