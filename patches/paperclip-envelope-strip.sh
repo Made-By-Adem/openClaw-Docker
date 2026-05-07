@@ -51,8 +51,8 @@ for f in "$DIST_DIR"/*.js; do
 
   needs_agent=0
   needs_chat=0
-  if [ "$has_agent" = 1 ] && ! grep -qF 'delete p.paperclip' "$f"; then needs_agent=1; fi
-  if [ "$has_chat" = 1 ] && ! grep -qF 'delete params.paperclip' "$f"; then needs_chat=1; fi
+  if [ "$has_agent" = 1 ] && ! grep -Eq 'delete\s+[A-Za-z_$][A-Za-z0-9_$]*\.paperclip;' "$f"; then needs_agent=1; fi
+  if [ "$has_chat" = 1 ] && ! grep -Eq 'delete\s+[A-Za-z_$][A-Za-z0-9_$]*\.paperclip;' "$f"; then needs_chat=1; fi
 
   if [ "$needs_agent" = 0 ] && [ "$needs_chat" = 0 ]; then
     echo "[paperclip-envelope-strip] $(basename "$f"): already patched"
