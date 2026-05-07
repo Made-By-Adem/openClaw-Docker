@@ -8,6 +8,17 @@ RUN LATEST=$(npm view openclaw dist-tags.latest) && \
     cp -rf package/* /app/ && \
     rm -rf package openclaw-*.tgz && \
     cd /app && rm -rf package-lock.json node_modules && npm install --omit=dev
+
+# Strip the `paperclip` envelope key from gateway RPC params before AJV
+# validation. Workaround for an upstream schema bug — Paperclip cloud
+# adapter wraps each RPC with a `paperclip` envelope that AJV rejects
+# because the agent/chat.send schemas use `additionalProperties: false`.
+# Remove this RUN step once the upstream fix lands.
+COPY patches/paperclip-envelope-strip.sh /tmp/patches/paperclip-envelope-strip.sh
+RUN chmod +x /tmp/patches/paperclip-envelope-strip.sh \
+    && /tmp/patches/paperclip-envelope-strip.sh \
+    && rm -rf /tmp/patches
+
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
        curl \
