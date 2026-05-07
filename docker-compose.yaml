@@ -25,7 +25,7 @@ services:
       - "18790:18790"   # Dashboard UI
     init: true
     restart: unless-stopped
-    read_only: true
+    read_only: false
     tmpfs:
       - /tmp:size=1g
       - /home/node/.openclaw/browser:size=512m

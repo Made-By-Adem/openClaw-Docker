@@ -57,7 +57,7 @@ This project adds a thin Docker layer on top of the official `alpine/openclaw` i
 - 🌐 **Chromium browser** with all required dependencies for browser automation skills
 - 🐳 A `--no-sandbox` wrapper so Chromium runs correctly inside Docker
 - 🔧 Execute-permission fixes for bundled skill scripts
-- 🔒 **Security hardening** — read-only filesystem, dropped capabilities, rate limiting, health checks
+- 🔒 **Security hardening** — dropped capabilities, rate limiting, health checks, and documented filesystem tradeoffs for CLI-enabled setups
 - 🎙️ **Voice message support** — local speech-to-text (faster-whisper) and text-to-speech (edge-tts), no external APIs needed
 
 Everything else is standard OpenClaw — no custom code.
@@ -72,7 +72,7 @@ Everything else is standard OpenClaw — no custom code.
 | [Skill Development](docs/SKILL-DEVELOPMENT.md) | How to create, structure, and maintain custom skills |
 | [Personalization](docs/PERSONALIZATION.md) | Quick reference for the personalization script and workspace files |
 | [Multi-Agent Guide](docs/AGENTS-GUIDE.md) | Give your agent specialized roles — it switches between developer, assistant, marketeer (or custom) based on what you ask |
-| [CLI Setup](docs/AI-CLI-SETUP.md) | Set up Claude CLI, Gemini CLI, and GitHub CLI — authenticate without API keys, push code to GitHub |
+| [CLI Setup](docs/AI-CLI-SETUP.md) | Set up Claude CLI, Gemini CLI, and GitHub CLI — authenticate without API keys, push code to GitHub (includes security tradeoffs) |
 | [Security](docs/SECURITY.md) | Security hardening details, container isolation, recommended practices |
 | [SearXNG Setup](docs/SEARXNG-SETUP.md) | Add private self-hosted web search with optional Tor support |
 
@@ -1117,6 +1117,9 @@ You can configure OpenClaw to prioritize Claude Code CLI for code-related skills
 <summary>🔑 <strong>Authenticate via CLI (no API key needed)</strong></summary>
 
 Instead of entering an API key during onboarding, you can authenticate using the **Claude Code CLI** (Anthropic) or **Gemini CLI** (Google). The CLI tools reuse your existing login session — no need to create or manage API keys.
+
+> [!WARNING]
+> The CLI-enabled setup documented here trades away the gateway container's read-only filesystem hardening. If you enable these in-container CLI flows, read the security notes in [CLI Setup](docs/AI-CLI-SETUP.md) first and only run this on a machine you trust for that risk level.
 
 **Supported CLIs:**
 

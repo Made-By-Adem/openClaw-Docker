@@ -2,6 +2,9 @@
 
 This Docker image includes three CLI tools out of the box. Each needs a one-time login — after that, sessions are persisted in mounted volumes and survive container restarts.
 
+> [!WARNING]
+> Enabling CLI-based auth in this setup requires the main gateway container to run with `read_only: false`. That is a deliberate security tradeoff: CLI tools and their auth/session flows may need writable state outside strict tmpfs-only paths. If you do not need Claude CLI, Gemini CLI, or GitHub CLI inside the container, keep or restore a read-only setup instead.
+
 | CLI | Purpose | Login persisted in |
 | --- | --- | --- |
 | **Claude Code CLI** | Anthropic model auth (no API key needed) | `./data/claude-cli/` |
@@ -218,6 +221,9 @@ sudo chown -R 1000:1000 ./data/claude-cli ./data/gemini-cli ./data/github-cli ./
 ## Security notes
 
 - Auth sessions are stored in `./data/claude-cli/`, `./data/gemini-cli/`, and `./data/github-cli/`. Treat these like credentials — restrict access and never commit to git.
+- This CLI-enabled setup uses `read_only: false` for the gateway container. That weakens one of the repo's original hardening measures in exchange for better in-container CLI compatibility.
+- If you do not need in-container CLI auth, prefer a stricter deployment with `read_only: true` and without these extra auth mounts.
+- If you do use CLI auth, combine it with tighter host-level controls: dedicated host/VPS, restricted shell access, encrypted backups, and no unrelated sensitive data on the same machine.
 - The `.dockerignore` file excludes `data/` from the Docker build context.
 - Rotate sessions periodically by re-running the login commands.
 - To revoke a compromised session:

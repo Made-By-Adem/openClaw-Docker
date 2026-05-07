@@ -41,9 +41,12 @@ This Docker setup includes the following security measures:
 
 ### Docker container hardening
 
+> [!WARNING]
+> If you enable in-container Claude CLI, Gemini CLI, or GitHub CLI authentication exactly as documented in `docs/AI-CLI-SETUP.md`, you may need `read_only: false` on the main gateway container for compatibility. That is a real reduction in hardening, not a cosmetic config change. Document it clearly in your deployment and only accept that tradeoff when CLI-based auth is more valuable than maximum container immutability.
+
 | Measure | Description |
 | --- | --- |
-| 🔏 **Read-only filesystem** | Prevents runtime modification of application files |
+| 🔏 **Read-only filesystem** | Prevents runtime modification of application files (note: CLI-auth workflows may require disabling this) |
 | 🚫 **All capabilities dropped** | `cap_drop: ALL` removes all Linux capabilities |
 | ⬆️ **No privilege escalation** | `no-new-privileges` prevents gaining permissions |
 | 📊 **Resource limits** | Memory, CPU, and PID caps prevent exhaustion and fork-bombs |
