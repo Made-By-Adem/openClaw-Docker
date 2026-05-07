@@ -25,7 +25,7 @@ services:
       - "18790:18790"   # Dashboard UI
     init: true
     restart: unless-stopped
-    read_only: false
+    read_only: true
     tmpfs:
       - /tmp:size=1g
       - /home/node/.openclaw/browser:size=512m
@@ -70,6 +70,7 @@ services:
     stdin_open: true
     tty: true
     init: true
+    restart: "no"
     cap_drop:
       - ALL
     security_opt:
