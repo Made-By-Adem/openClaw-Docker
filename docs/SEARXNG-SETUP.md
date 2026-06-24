@@ -184,6 +184,7 @@ services:
     cpus: 0.5
     networks:
       - searxng-net
+      - openclaw-shared
 
 networks:
   searxng-net:
@@ -194,6 +195,8 @@ networks:
 
 > [!NOTE]
 > 🧅 The `tor` service provides a SOCKS5 proxy on port 9050. SearXNG uses it automatically for engines with `using_tor_proxy: true` (like Ahmia) via the `outgoing.proxies` setting in `settings.yml`.
+>
+> The `tor` service is attached to both `searxng-net` and `openclaw-shared`. Only `searxng-net` is functionally required (SearXNG reaches Tor over it); `openclaw-shared` is added for network consistency so all stack services share one network.
 
 ---
 
