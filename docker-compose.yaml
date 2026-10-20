@@ -36,7 +36,7 @@ services:
       - no-new-privileges:true
     mem_limit: 4g
     cpus: 2.0
-    pids_limit: 256
+    pids_limit: 512
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:18789/health"]
       interval: 30s
@@ -45,6 +45,8 @@ services:
       retries: 3
     networks:
       - openclaw-net
+      # Customer tailnet sidecar (ts-support, Coolify). Created by that resource.
+      - support
     command:
       [
         "node",
@@ -89,3 +91,5 @@ services:
 networks:
   openclaw-net:
     driver: bridge
+  support:
+    external: true

@@ -53,6 +53,7 @@ RUN apt-get update \
        # Developer tools
        git \
        openssh-client \
+       netcat-openbsd \
     && rm -rf /var/lib/apt/lists/*
 
 # GitHub CLI
