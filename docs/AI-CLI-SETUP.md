@@ -9,7 +9,7 @@ This Docker image includes three CLI tools out of the box. Each needs a one-time
 | --- | --- | --- |
 | **Claude Code CLI** | Anthropic model auth (no API key needed) | `./data/claude-cli/` |
 | **Gemini CLI** | Google model auth (no API key needed) | `./data/gemini-cli/` |
-| **GitHub CLI** (`gh`) | Push code, create PRs, manage repos | `./data/github-cli/` |
+| **GitHub CLI** (`gh`) | Push code, create PRs, manage repos | `./data/config/gh-cli/` |
 
 ---
 
@@ -120,7 +120,7 @@ docker compose exec openclaw-gateway git config --global user.name "Your Name"
 docker compose exec openclaw-gateway git config --global user.email "you@example.com"
 ```
 
-Git config is persisted in `./data/gitconfig`.
+The git identity is set system-wide in the `Dockerfile` (`git config --system`). Change it there and rebuild: `--global` changes made inside the container are lost when the container is recreated.
 
 ### Verify
 
@@ -213,14 +213,14 @@ docker compose exec openclaw-gateway gh auth login  # GitHub
 The directories must be owned by uid 1000 (the `node` user inside the container):
 
 ```bash
-sudo chown -R 1000:1000 ./data/claude-cli ./data/gemini-cli ./data/github-cli ./data/workspace/projects
+sudo chown -R 1000:1000 ./data/claude-cli ./data/gemini-cli ./data/config/gh-cli ./data/workspace/projects
 ```
 
 ---
 
 ## Security notes
 
-- Auth sessions are stored in `./data/claude-cli/`, `./data/gemini-cli/`, and `./data/github-cli/`. Treat these like credentials — restrict access and never commit to git.
+- Auth sessions are stored in `./data/claude-cli/`, `./data/gemini-cli/`, and `./data/config/gh-cli/`. Treat these like credentials — restrict access and never commit to git.
 - This CLI-enabled setup uses `read_only: false` for the gateway container. That weakens one of the repo's original hardening measures in exchange for better in-container CLI compatibility.
 - If you do not need in-container CLI auth, prefer a stricter deployment with `read_only: true` and without these extra auth mounts.
 - If you do use CLI auth, combine it with tighter host-level controls: dedicated host/VPS, restricted shell access, encrypted backups, and no unrelated sensitive data on the same machine.

@@ -141,7 +141,7 @@ docker compose exec openclaw-gateway git config --global user.name "Your Name"
 docker compose exec openclaw-gateway git config --global user.email "you@example.com"
 ```
 
-Your git config is persisted in `./data/gitconfig`.
+The git identity is set system-wide in the `Dockerfile` (`git config --system`). Change it there and rebuild: `--global` changes made inside the container are lost when the container is recreated.
 
 ### 2. Authenticate with GitHub
 
@@ -149,7 +149,7 @@ Your git config is persisted in `./data/gitconfig`.
 docker compose exec openclaw-gateway gh auth login
 ```
 
-Follow the interactive login flow. Your session is persisted in `./data/github-cli/`.
+Follow the interactive login flow. Your session is persisted in `./data/config/gh-cli/` (`GH_CONFIG_DIR`).
 
 Verify:
 ```bash
