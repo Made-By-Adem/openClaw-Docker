@@ -503,7 +503,7 @@ https://pa.example.com/#token=YOUR_GATEWAY_TOKEN
 
 **"Gateway start blocked: set gateway.mode=local"** — Add `"mode": "local"` to the `gateway` object in `openclaw.json`.
 
-**Gateway ignores bind setting** — Do not use `--bind` in the docker-compose `command`. Let `openclaw.json` handle it via `"bind": "lan"`. The `--bind` CLI flag overrides the config file and can cause conflicts.
+**Gateway ignores bind setting** — The docker-compose `command` passes `--bind lan`, and that CLI flag overrides `"bind"` in `openclaw.json`. Change the bind mode in `docker-compose.yaml`, not in `openclaw.json`. The published ports stay bound to `127.0.0.1` on the host either way.
 
 **Dashboard loads but pairing fails** — Make sure `trustedProxies` includes the Docker bridge subnet (`172.17.0.0/16`) and `allowInsecureAuth` is `true`. Then approve the device pairing as shown in Step 8.
 
@@ -566,7 +566,7 @@ This project uses **two** `.env` files with different purposes:
 | File | Read by | Purpose |
 | --- | --- | --- |
 | `./.env` (project root) | Docker Compose | Interpolates `${...}` variables in `docker-compose.yaml` |
-| `./data/config/.env` | OpenClaw | Resolves `${...}` references in `openclaw.json` |
+| `./data/config/.env` | OpenClaw + gateway container | Resolves `${...}` references in `openclaw.json`; also loaded as container environment via `env_file` (must exist, or `docker compose up` fails) |
 
 The **project root** `.env` is created by `setup.sh` and feeds Docker Compose. It does **not** reach OpenClaw inside the container.
 
@@ -896,7 +896,7 @@ docker compose restart openclaw-gateway
 
 ### Step-by-step update
 
-> **How it works:** The Dockerfile automatically fetches the latest stable OpenClaw release from npm during build (skipping beta/rc versions). A `--no-cache` rebuild is all you need to upgrade.
+> **How it works:** The Dockerfile pins the OpenClaw version (`npm pack openclaw@<version>`). To upgrade, change that version in the `Dockerfile` and rebuild. The Dockerfile also copies a patched Node.js binary over the base image (`COPY --from=node:<version>`), because the `alpine/openclaw` base image is no longer updated. Bump that tag as well when Node.js publishes a security release.
 
 ```bash
 # 1. Back up your data
@@ -905,13 +905,19 @@ cp -r ./data ./data-backup-$(date +%Y%m%d)
 # 2. Pull the latest changes to this repo
 git pull origin main
 
-# 3. Rebuild the Docker image (fetches latest stable OpenClaw + Dockerfile changes)
+# 3. Set the new OpenClaw version (and Node.js tag, if needed) in the Dockerfile, then rebuild
 docker compose build --no-cache
 
-# 4. Restart with the new image
+# 4. Migrate state for the new version (the gateway refuses to start while a migration is pending)
+docker compose stop openclaw-gateway
+#    If the gateway restarts during the migration: docker update --restart=no openclaw-gateway
+#    (set it back with --restart=unless-stopped afterwards)
+docker compose run --rm --no-deps --entrypoint "" openclaw-gateway node dist/index.js doctor --fix
+
+# 5. Restart with the new image
 docker compose down && docker compose up -d
 
-# 5. Run security checks
+# 6. Run security checks
 docker compose exec openclaw-gateway node dist/index.js doctor --repair
 docker compose exec openclaw-gateway node dist/index.js security audit --deep
 

@@ -36,9 +36,7 @@ mkdir -p ./data/workspace/docs
 # AI CLI and developer tool directories (persist sessions across container restarts)
 mkdir -p ./data/claude-cli
 mkdir -p ./data/gemini-cli
-mkdir -p ./data/github-cli
 mkdir -p ./data/workspace/projects
-touch ./data/gitconfig
 
 # Install default skill templates (audio TTS/STT, etc.)
 if [ -d "./templates/skills" ]; then
@@ -147,6 +145,12 @@ chown -R 1000:1000 "$CLI_CONFIG_DIR" 2>/dev/null || true
 
 # --- Build custom image ---
 echo ""
+# --- External networks used by docker-compose.yaml ---
+for net in openclaw-shared support; do
+  docker network inspect "$net" >/dev/null 2>&1 || docker network create "$net" >/dev/null
+done
+echo "[OK] Docker networks ready (openclaw-shared, support)"
+
 echo "Building custom image..."
 docker compose build
 echo "[OK] Image built"
